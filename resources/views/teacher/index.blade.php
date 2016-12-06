@@ -29,10 +29,8 @@
                             </td>
                             <td>{{$teacher['phoneNum']}}</td>
                             <td>
-                                <form method="post" action="{{$controlUrl}}/delete?id={{$teacher['id']}}" onsubmit="return confirm('确定删除！')">
-                                    {{ csrf_field() }}
-                                    <button type="submit" class="btn btn-warning">删除</button>
-                                </form>
+                                <a class="btn btn-info" href="{{$controlUrl}}/edit?id={{$teacher['id']}}">修改</a>
+                                <a class="btn btn-warning" href="{{$controlUrl}}/delete?id={{$teacher['id']}}" onclick="return confirm('确认删除！')">删除</a>
                             </td>
                         </tr>
                     @endforeach

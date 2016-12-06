@@ -38,13 +38,13 @@ Route::post('/auth/user/changePWD/update', 'Auth\StaffController@pwdUpdate');
 Route::get('/teacher/index', 'TeacherController@index');
 Route::get('/teacher/index/edit', 'TeacherController@edit');
 Route::post('/teacher/update', 'TeacherController@update');
-Route::post('/teacher/index/delete', 'TeacherController@delete');
+Route::get('/teacher/index/delete', 'TeacherController@delete');
 
 // student
 Route::get('/student/index', 'StudentController@index');
 Route::get('/student/index/edit', 'StudentController@edit');
 Route::post('/student/update', 'StudentController@update');
-Route::post('/student/index/delete', 'StudentController@delete');
+Route::get('/student/index/delete', 'StudentController@delete');
 Route::get('/student/query', 'StudentController@query');
 Route::post('/student/query', 'StudentController@query');
 
@@ -52,7 +52,7 @@ Route::post('/student/query', 'StudentController@query');
 Route::get('/course/index', 'CourseController@index');
 Route::get('/course/index/edit', 'CourseController@edit');
 Route::post('/course/update', 'CourseController@update');
-Route::post('/course/index/delete', 'CourseController@delete');
+Route::get('/course/index/delete', 'CourseController@delete');
 Route::get('/course/query', 'CourseController@query');
 Route::post('/course/query', 'CourseController@query');
 Route::post('/course/query/clickCourse', 'CourseController@clickCourse');

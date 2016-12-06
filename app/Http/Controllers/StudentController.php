@@ -192,7 +192,7 @@ class StudentController extends Controller
         foreach($gradeCof as $_ck => $grade){
             $params['grade']['options'][] = ['value' => $_ck, 'text' => $grade];
         }
-        $familyDefault = [
+        $familyDefault[] = [
             'parentName' => '',
             'contactNum' => '',
             'workAddress' => '',

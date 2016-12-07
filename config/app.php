@@ -234,23 +234,23 @@ return [
 
     'nav' => [
         [
-            '教师管理' => ['icon' => 'fa-users', 'perm' => 'teacher.*',
+            '教师管理' => ['icon' => 'fa-graduation-cap', 'perm' => 'teacher.*',
                 'children' => [
-                    '教师录入' => ['url' => '/teacher/index', 'icon'=>'fa-users', 'perm' => 'teacher.enter'],
+                    '教师录入' => ['url' => '/teacher/index', 'icon'=>'fa-edit', 'perm' => 'teacher.enter'],
                 ],
             ],
-            '学生管理' => ['icon' => 'fa-user', 'perm' => 'student.*',
+            '学生管理' => ['icon' => 'fa-users', 'perm' => 'student.*',
                 'children' => [
-                    '学生录入' => ['url' => '/student/index', 'icon'=>'fa-user', 'perm' => 'student.enter'],
-                    '学生查询' => ['url' => '/student/query', 'icon'=>'fa-user', 'perm' => 'student.query'],
+                    '学生录入' => ['url' => '/student/index', 'icon'=>'fa-edit', 'perm' => 'student.enter'],
+                    '学生查询' => ['url' => '/student/query', 'icon'=>'fa-search', 'perm' => 'student.query'],
                 ],
             ],
-            '课程管理' => ['icon' => 'fa-navicon', 'perm' => 'course.*',
+            '课程管理' => ['icon' => 'fa-book', 'perm' => 'course.*',
                 'children' => [
-                    '课程录入' => ['url' => '/course/index', 'icon'=>'fa-navicon', 'perm' => 'course.enter'],
-                    '课程查询' => ['url' => '/course/query', 'icon'=>'fa-navicon', 'perm' => 'course.query'],
-                    '排课表' => ['url' => '/course/markTimetable', 'icon'=>'fa-navicon', 'perm' => 'course.markTable'],
-                    '课表查询' => ['url' => '/course/timetable', 'icon'=>'fa-navicon', 'perm' => 'course.tableQuery'],
+                    '课程录入' => ['url' => '/course/index', 'icon'=>'fa-edit', 'perm' => 'course.enter'],
+                    '课程查询' => ['url' => '/course/query', 'icon'=>'fa-search', 'perm' => 'course.query'],
+                    '排课表' => ['url' => '/course/markTimetable', 'icon'=>'fa-calendar-check-o', 'perm' => 'course.markTable'],
+                    '课表查询' => ['url' => '/course/timetable', 'icon'=>'fa-calendar', 'perm' => 'course.tableQuery'],
                 ],
             ],
             '权限管理' => ['icon' => 'fa-unlock-alt', 'perm' => 'perm',

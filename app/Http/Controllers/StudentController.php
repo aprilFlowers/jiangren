@@ -13,8 +13,16 @@ class StudentController extends Controller
         $params['controlUrl'] = '/student/index';
         $this->initSearchBar($request, $params);
 
+        $name = $request->input('name');
+        $grade = $request->input('grade');
+        $phoneNum = $request->input('phoneNum');
+
         $student = new StudentService();
-        $students = $student->getStudents();
+        if($request['_token']) {
+            $students = $student->getStudentsInfos($name, $grade, $phoneNum);
+        } else {
+            $students = $student->getStudents();
+        }
         foreach ($students as &$student) {
             $student['grade'] = config("language.grade." . $student['grade']);
         }
@@ -52,7 +60,13 @@ class StudentController extends Controller
 
             if(!empty($studentInfos['courseInfos'])) {
                 $courseInfos = json_decode($studentInfos['courseInfos'], true);
-                $params['student']['course'] = array_keys($courseInfos);
+                $studentCourses = [];
+                $courseConf = config('language.course');
+                foreach ($courseInfos as $courseInfo) {
+                    $courseInfo['courseName'] = $courseConf[$courseInfo['courseId']];
+                    $studentCourses[] = $courseInfo;
+                }
+                $params['student']['courses'] = $studentCourses;
             }
         }
 
@@ -94,11 +108,13 @@ class StudentController extends Controller
 
         // course
         $courseDatas = [];
-        $courses = $request->input('course', []);
-        $cour = new CourseService();
-        foreach ($courses as $course) {
-            $courseInfo = $cour->getInfoById($course);
-            $courseDatas[$course] = $courseInfo['period'];
+        $courseIds = $request->input('courseId', []);
+        $courseNums = $request->input('courseNum', []);
+        $courseConf = config('language.course');
+        foreach ($courseIds as $i => $courseId) {
+            if (!empty($courseConf[$courseId])) {
+                $courseDatas[] = ['courseId' => $courseId, 'courseNum' => $courseNums[$i]];
+            }
         }
         $data['courseInfos'] = json_encode($courseDatas);
 
@@ -166,7 +182,7 @@ class StudentController extends Controller
                         $course['currentPeriod'] = $p;
                         $courseInfo = $cour->getInfoById($c);
                         $course['period'] = $courseInfo['period'];
-                        $course['courseName'] = $courseInfo['name'];
+                        $course['courseId'] = $courseInfo['name'];
                         $courses[] = $course;
                     }
                 }
@@ -182,15 +198,21 @@ class StudentController extends Controller
     protected function initSearchBar($request, &$params) {
         $params['sex']['selected'] = '';
         $params['sex']['options']  = [];
-        $sexCof = config('language.sex');
-        foreach($sexCof as $_sk => $sex){
+        $sexConf = config('language.sex');
+        foreach($sexConf as $_sk => $sex){
             $params['sex']['options'][] = ['value' => $_sk, 'text' => $sex];
         }
         $params['grade']['selected'] = '';
         $params['grade']['options']  = [];
-        $gradeCof = config('language.grade');
-        foreach($gradeCof as $_ck => $grade){
+        $gradeConf = config('language.grade');
+        foreach($gradeConf as $_ck => $grade){
             $params['grade']['options'][] = ['value' => $_ck, 'text' => $grade];
+        }
+        $params['course']['selected'] = '';
+        $params['course']['options']  = [];
+        $courseConf = config('language.course');
+        foreach($courseConf as $_ck => $course){
+            $params['course']['options'][] = ['value' => $_ck, 'text' => $course];
         }
         $familyDefault[] = [
             'parentName' => '',
@@ -198,8 +220,11 @@ class StudentController extends Controller
             'workAddress' => '',
         ];
         $params['students']['familyDefault'] = json_encode($familyDefault);
-        $course = new CourseService();
-        $params['courses'] = $course->getCourses();
+        $courseDefault[] = [
+            'courseId' => '',
+            'courseNum' => '',
+        ];
+        $params['students']['courseDefault'] = json_encode($courseDefault);
         if($request['_token']){
             $params['_token'] = $request['_token'];
             if(!empty($name = $request->input('name'))){

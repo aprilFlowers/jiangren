@@ -42,11 +42,11 @@ Route::get('/teacher/index/delete', 'TeacherController@delete');
 
 // student
 Route::get('/student/index', 'StudentController@index');
+Route::post('/student/index', 'StudentController@index');
 Route::get('/student/index/edit', 'StudentController@edit');
 Route::post('/student/update', 'StudentController@update');
 Route::get('/student/index/delete', 'StudentController@delete');
 Route::get('/student/query', 'StudentController@query');
-Route::post('/student/query', 'StudentController@query');
 
 //course
 Route::get('/course/index', 'CourseController@index');

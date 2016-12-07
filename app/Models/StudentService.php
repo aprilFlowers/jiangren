@@ -39,7 +39,7 @@ class StudentService {
         if (!empty($name)) {
             $student = $student->where('name', $name);
         }
-        if (!empty($grade)) {
+        if ($grade >= 0) {
             $student = $student->where('grade', $grade);
         }
         if (!empty($phoneNum)) {

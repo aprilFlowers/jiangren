@@ -11,6 +11,11 @@
                 this.workAddress = null;
             }
 
+            function courseInfo() {
+                this.courseId = null;
+                this.courseNum = null;
+            }
+
             var sex = new Vue({
                 el: '#sexs',
                 delimiters: ['<%', '%>'],
@@ -27,7 +32,7 @@
                     options:{!! json_encode($grade['options']) !!}
                 }
             });
-            var parent = new Vue({
+            var parents = new Vue({
                 el: '#parents',
                 delimiters: ['<%', '%>'],
                 data: {
@@ -40,10 +45,30 @@
                     }
                 }
             });
+            var course = new Vue({
+                el: '#course',
+                delimiters: ['<%', '%>'],
+                data: {
+                    courses: {!! !empty($student['courses']) ? json_encode($student['courses']) : $students['courseDefault'] !!},
+                    options:{!! json_encode($course['options']) !!}
+                },
+                methods: {
+                    addCourse: function () {
+                        var newCourse = new courseInfo();
+                        this.courses.push(newCourse);
+                    }
+                }
+            });
 
             getPlaceholder("{{empty($sex['selected'])}}", '#sex', "--请选择性别--");
             getPlaceholder("{{empty($grade['selected'])}}", '#grade', "--请选择年级--");
             $(".select2").select2();
+
+            @if(!\Entrust::can('student.enter') || !empty($_GET['preview']))
+              $('.nav-tabs-custom input').attr('readonly', true);
+              $('.nav-tabs-custom select').attr('readonly', true);
+              $('.nav-tabs-custom button').hide();
+            @endif
         })
     </script>
 @endsection
@@ -59,7 +84,7 @@
             <ul class="nav nav-tabs">
                 <li class="active"><a href="#student" data-toggle="tab">学生信息</a></li>
                 <li><a href="#parents" data-toggle="tab">家长信息</a></li>
-                <li><a href="#course" data-toggle="tab">课程信息</a></li>
+                <li><a href="#courses" data-toggle="tab">课程信息</a></li>
             </ul>
             <!-- nav-tabs-custom -->
             <div class="tab-content">
@@ -134,47 +159,60 @@
                         <div class="form-group">
                             <div class="row" id="family">
                                 <div v-for="parent in parents">
-                                    <div class="col-lg-4 col-md-6 col-sm-12">
-                                        <input type="text" class="form-control" placeholder="家长姓名" name="parentName[]" style="margin-bottom:10px;"
-                                               v-bind:value="parent.parentName" v-model="parent.parentName">
+                                    <div class="col-lg-4 col-md-4 col-sm-12">
+                                      <label>家长姓名</label>
+                                        <input type="text" class="form-control" placeholder="家长姓名" name="parentName[]" style="margin-bottom:10px;" v-bind:value="parent.parentName" v-model="parent.parentName">
                                     </div>
-                                    <div class="col-lg-4 col-md-6 col-sm-12">
-                                        <input type="text" class="form-control" placeholder="联系电话" name="contactNum[]" style="margin-bottom:10px;"
-                                               v-bind:value="parent.contactNum" v-model="parent.contactNum">
+                                    <div class="col-lg-4 col-md-4 col-sm-12">
+                                      <label>联系电话</label>
+                                        <input type="text" class="form-control" placeholder="联系电话" name="contactNum[]" style="margin-bottom:10px;" v-bind:value="parent.contactNum" v-model="parent.contactNum">
                                     </div>
-                                    <div class="col-lg-4 col-md-6 col-sm-12">
-                                        <input type="text" class="form-control" placeholder="工作地址" name="workAddress[]" style="margin-bottom:10px;"
-                                               v-bind:value="parent.workAddress" v-model="parent.workAddress">
+                                    <div class="col-lg-4 col-md-4 col-sm-12">
+                                      <label>工作地址</label>
+                                      <input type="text" class="form-control" placeholder="工作地址" name="workAddress[]" style="margin-bottom:10px;" v-bind:value="parent.workAddress" v-model="parent.workAddress">
                                     </div>
                                 </div>
                                 <div class="col-lg-6">
-                                    <a class="btn btn-info" id="addParent" v-on:click="addParent">添加</a>
+                                    <button type="button" class="btn btn-info" id="addParent" v-on:click="addParent">添加</button>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
                 <!-- course -->
-                <div class="tab-pane" id="course">
-                    <div class="box-body">
-                        <div class="form-group">
-                            <label for="course">科目</label>
-                            <select class="form-control select2" multiple="multiple" data-placeholder="--请选择科目--" style="width: 100%;" name="course[]">
-                                @foreach($courses as $key=>$course)
-                                    @if(!empty($student['course']))
-                                        <option value="{{$course['id']}}" {{(in_array($course['id'], $student['course']))? 'selected':''}}>{{$course['name']}}</option>
-                                    @else
-                                        <option value="{{$course['id']}}">{{$course['name']}}</option>
-                                    @endif
-                                @endforeach
+                <div class="tab-pane" id="courses">
+                  <div class="box-body">
+                    <div class="form-group">
+                      <div class="row" id="course">
+                        <div v-for="course in courses">
+                          <div class="col-lg-4 col-md-4 col-sm-12">
+                            <label>科目</label>
+                            <select class="form-control" id="courseId" name="courseId[]" v-model="course.courseId">
+                              <option v-for="option in options" v-bind:value="option.value"> <% option.text %>
+                              </option>
                             </select>
+                          </div>
+                          <div class="col-lg-4 col-md-4 col-sm-12">
+                            <label>课时</label>
+                            <input type="text" class="form-control" placeholder="课时" name="courseNum[]" style="margin-bottom:10px;" v-bind:value="course.courseNum" v-model="course.courseNum">
+                          </div>
+                          <div class="col-lg-4 col-md-4 col-sm-12">
+                            <label>剩余课时</label>
+                            <input type="text" class="form-control" style="margin-bottom:10px;" disabled>
+                          </div>
                         </div>
+                        <div class="col-lg-6">
+                          <button type="button" class="btn btn-info" id="addCourse" v-on:click="addCourse">添加</button>
+                        </div>
+                      </div>
                     </div>
+                  </div>
                 </div>
             </div>
             <!-- footer button -->
             <div class="box-footer">
-                <button type="submit" class="btn btn-primary" style="margin-right:20px;" v-on:click="submit">提交</button>
+              <a class="btn btn-primary" href="/student/index">返回</a>
+              <button type="submit" class="btn btn-primary" v-on:click="submit">提交</button>
             </div>
         </div>
         <!-- /.box -->

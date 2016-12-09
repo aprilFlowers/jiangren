@@ -236,13 +236,12 @@ return [
         [
             '教师管理' => ['icon' => 'fa-graduation-cap', 'perm' => 'teacher.*',
                 'children' => [
-                    '教师录入' => ['url' => '/teacher/index', 'icon'=>'fa-edit', 'perm' => 'teacher.enter'],
+                    '教师信息' => ['url' => '/teacher/index', 'icon'=>'fa-edit', 'perm' => 'teacher.enter'],
                 ],
             ],
             '学生管理' => ['icon' => 'fa-users', 'perm' => 'student.*',
                 'children' => [
-                    '学生录入' => ['url' => '/student/index', 'icon'=>'fa-edit', 'perm' => 'student.enter'],
-                    '学生查询' => ['url' => '/student/query', 'icon'=>'fa-search', 'perm' => 'student.query'],
+                    '学生信息' => ['url' => '/student/index', 'icon'=>'fa-edit', 'perm' => 'student.enter'],
                 ],
             ],
             '课程管理' => ['icon' => 'fa-book', 'perm' => 'course.*',

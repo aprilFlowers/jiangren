@@ -53,13 +53,7 @@
                     },
                     dataType  : 'json',
                     success   : function(data){
-                        if(data == 1){
-                            alert('恭喜您！操作成功！');
-                        }else if(data == 2){
-                            alert('操作失败！请稍后重试！！！');
-                        }else if(data == 3) {
-                            alert('该课程已确认！');
-                        }
+                        alert(data.errorMsg);
                     }
                 });
             }

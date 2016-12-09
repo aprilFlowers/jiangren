@@ -59,7 +59,5 @@ Route::post('/course/query/clickCourse', 'CourseController@clickCourse');
 Route::get('/course/query/clickCourse', 'CourseController@clickCourse');
 Route::get('/course/timetable', 'CourseController@timetable');
 Route::post('/course/timetable', 'CourseController@timetable');
-Route::get('/course/markTimetable', 'CourseController@markTimetable');
-Route::post('/course/markTimetable', 'CourseController@markTimetable');
 Route::get('/course/markTimetable/saveData', 'CourseController@saveTimetableData');
 Route::get('/course/markTimetable/deleteData', 'CourseController@deleteTimetableData');

@@ -1,14 +1,11 @@
 @extends('layouts.app')
 
 @section('js')
+    <!-- jQuery UI 1.11.4 -->
+    <script src="/public/default/js/jquery.easyui.min.js"></script>
     <script src="/public/default/js/vue.js"></script>
     <script src="/public/default/js/common/selectPlaceholder.js"></script>
     <script src="/public/default/js/My97DatePicker/WdatePicker.js"></script>
-    <!-- jQuery UI 1.11.4 -->
-    <script src="/public/default/js/jquery-ui.min.js"></script>
-    <!-- fullCalendar 2.2.5 -->
-    <script src="/public/default/js/moment.min.js"></script>
-    <script src="/public/default/js/fullcalendar.min.js"></script>
     <script>
         $(function(){
             var teacher = new Vue({
@@ -25,31 +22,77 @@
                     week: "{{!empty($week['selected']) ? $week['selected'] : ''}}"
                 }
             });
-
-            week.week = "{{$week['selected']}}";
             getPlaceholder("{{empty($teacher['selected'])}}", '#teacher', "--请选择老师--");
+            week.week = "{{$week['selected']}}";
 
-            $('#calendar').fullCalendar({
-                defaultView : 'agendaWeek',
-                defaultDate : "{{$time}}",
-                axisFormat:'h(:mm)t',
-                dayNamesShort:['星期日', '星期一', '星期二', '星期三',
-                    '星期四', '星期五', '星期六'],
-                header: {
-                    left: 'prev,next today',
-                    center: 'title',
-                    right: 'agendaWeek'
+            $('.item').draggable({
+                revert:true,
+                proxy:'clone',
+                disabled : {{$admin == 'admin' ? 'false' : 'true'}}
+            });
+            $('.item').droppable({
+                accept:'.assigned',
+                onDragEnter:function(e,source){
+                    $(source).addClass('trash');
                 },
-                buttonText: {
-                    today: '今天',
-                    week: 'week',
+                onDragLeave:function(e,source){
+                    $(source).removeClass('trash');
                 },
-                //Random default events
-                events : {!! $datas !!},
-                editable : false,
+                onDrop:function(e,source){
+                    if(confirm('确认删除！')) {
+                        $(source).remove();
+                        $.ajax({
+                            url : '/course/markTimetable/deleteData',
+                            dataType : 'json',
+                            data :{
+                                id : $(source).attr('id')
+                            },
+                            success : function(data) {
+                                alert(data.errorMsg);
+                            }
+                        });
+                    }
+                }
+            });
+            $('.right td.drop').droppable({
+                onDragEnter:function(){
+                    //enter table
+                    $(this).addClass('over');
+                },
+                onDragLeave:function(){
+                    //leave table
+                    $(this).removeClass('over');
+                },
+                onDrop:function(e,source){
+                    $(this).removeClass('over');
+                    if ($(source).hasClass('assigned')){
+                        //update
+                        $(this).append(source);
+                    } else {
+                        //add
+                        var c = $(source).clone().addClass('assigned');
+                        $(this).append(c);
+                        c.draggable({
+                            revert:true
+                        });
+                        // save event data
+                        $.ajax({
+                            url : '/course/markTimetable/saveData',
+                            dataType : 'json',
+                            data :{
+                                id : $(this).attr('id'),
+                                content : c.html()
+                            },
+                            success : function(data) {
+                                alert(data.errorMsg);
+                            }
+                        });
+                    }
+                }
             });
         })
     </script>
+
 @endsection
 
 @section('content')
@@ -80,19 +123,72 @@
     </div>
     <!-- /.search-box -->
     <div class="box">
-        <div class="box-body" style="min-height: 700px">
-            @if (!empty($_token))
-            <div class="col-md-9">
-                <div class="box box-primary">
+        <div class="row">
+            <div class="box-body" style="min-height: 700px">
+                <!-- course list -->
+                <div class="col-md-3">
+                    <div class="box box-solid">
+                        <div class="box-header with-border">
+                            <h4 class="box-title">基本课程</h4>
+                        </div>
+                        <div class="left box-body">
+                            <!-- the events -->
+                            <div id="external-events">
+                                @if(!empty($courseNames))
+                                    @foreach($courseNames as $name => $courseInfo)
+                                        <div class="item" id="{{$courseInfo['id']}}">{{$name}} | {{$courseInfo['teacher']}} | {{$courseInfo['student']}}</div>
+                                    @endforeach
+                                @endif
+
+                                <div class="demo-info" style="margin-bottom:10px">
+                                    <div class="demo-tip icon-tip">&nbsp;</div>
+                                    <div>请将课程拖拽至课程表中</div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- /.box-body -->
+                    </div>
+                </div>
+                <!-- end course list -->
+                <!-- right timetable -->
+                <div class="col-md-9">
                     <div class="box-body no-padding">
-                        <!-- THE CALENDAR -->
-                        <div id="calendar"></div>
+                        <div class="right">
+                            <h2 style="text-align: center;">{{$time}}</h2>
+                            <table class="table table-bordered" cellspacing="0" width="100%">
+                                <thead>
+                                <tr>
+                                    <td class="blank">节次\星期</td>
+                                    <td class="title">星期一</td>
+                                    <td class="title">星期二</td>
+                                    <td class="title">星期三</td>
+                                    <td class="title">星期四</td>
+                                    <td class="title">星期五</td>
+                                    <td class="title">星期六</td>
+                                    <td class="title">星期日</td>
+                                </tr>
+                                </thead>
+                                @foreach ($sectionList as $sec)
+                                    <tr>
+                                        <td class="time">{{$sec['name']}}</td>
+                                        @foreach($sec['id'] as $id)
+                                        <td class="drop" id="{{$id}}">
+                                            @if (!empty($table[$id]))
+                                                @foreach ($table[$id] as $t)
+                                                    <div class="item assigned {{$t['status'] ? 'clicked' : ''}}" id="{{$t['id']}}">{{$t['content']}}</div>
+                                                @endforeach
+                                            @endif
+                                        </td>
+                                        @endforeach
+                                    </tr>
+                                @endforeach
+                            </table>
+                        </div>
                     </div>
                     <!-- /.box-body -->
                 </div>
-                <!-- /. box -->
+                <!-- end timetable -->
             </div>
-            @endif
         </div>
         <!-- /.box-body -->
     </div>

@@ -1,0 +1,18 @@
+.item{
+    text-align:center;
+    border-radius: 3px;
+    margin-bottom:3px;
+    border:1px solid #dff0d8;
+    background:#dff0d8;
+    color:#444;
+    width:200px;
+    height:32px;
+    line-height: 32px;
+    z-index: 10;
+}
+.over{
+    background-color: #E0ECFF;
+}
+.clicked{
+    background:#ddd;
+}

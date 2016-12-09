@@ -25,7 +25,6 @@
 
                     // store the Event Object in the DOM element so we can get to it later
                     $(this).data('eventObject', eventObject);
-                    console.log(2);
 
                     // make the event draggable using jQuery UI
                     $(this).draggable({
@@ -40,6 +39,7 @@
             ini_events($('#external-events div.external-event'));
 
             $('#calendar').fullCalendar({
+                allDaySlot : false,
                 defaultView : 'agendaWeek',
                 defaultEventMinutes: 120,
                 header: {
@@ -86,6 +86,7 @@
                            success : function(data) {
                                if(data.length == 0) {
                                    $('#calendar').fullCalendar('refetchEvents', calEvent);
+//                                   $('#calendar').fullCalendar('removeEvents', calEvent.id);
                                }else {
                                    alert(data.errorMsg);
                                }
@@ -102,11 +103,9 @@
 
                     // we need to copy it, so that multiple events don't have a reference to the same object
                     var copiedEventObject = $.extend({}, originalEventObject);
-                    console.log(1);
 
                     // assign it the date that was reported
                     copiedEventObject.start = date;
-                    copiedEventObject.allDay = allDay;
                     copiedEventObject.backgroundColor = $(this).css("background-color");
                     copiedEventObject.borderColor = $(this).css("border-color");
 
@@ -130,7 +129,7 @@
     <!-- Main content -->
     <section class="content">
         <div class="row">
-            <div class="col-md-3">
+            <div class="col-md-3"    >
                 <div class="box box-solid">
                     <div class="box-header with-border">
                         <h4 class="box-title">Draggable Events</h4>

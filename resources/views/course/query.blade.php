@@ -35,9 +35,6 @@
                 }
             });
 
-            $('#openTime').datepicker({});
-            $('#endTime').datepicker({});
-
             getPlaceholder("{{empty($teacher['selected'])}}", '#teacher', "--请选择老师--");
             getPlaceholder("{{empty($student['selected'])}}", '#student', "--请选择学生--");
         });
@@ -82,17 +79,18 @@
                             </select>
                         </div>
                         <div class="col-xs-12 col-md-6 col-lg-2" style="margin: 5px 0 5px 0;">
-                            <input type="text" class="form-control pull-right" id="openTime" name="openTime"
+                            <input type="text" class="Wdate form-control" style="height:34px;border-color: #d2d6de;" id="openTime" name="openTime"
                                    placeholder="开始时间" v-model="openTime" onClick="WdatePicker({skin:'whyGreen',dateFmt:'yyyy-MM-dd HH:mm:ss',
 minDate:'2008-03-08 11:30:00'})">
                         </div>
                         <div class="col-xs-12 col-md-6 col-lg-2" style="margin: 5px 0 5px 0;">
-                            <input type="text" class="form-control pull-right" id="endTime" name="endTime"
+                            <input type="text" class="Wdate form-control" style="height:34px;border-color: #d2d6de;" id="endTime" name="endTime"
                                    placeholder="结束时间" v-model="endTime" onClick="WdatePicker({skin:'whyGreen',dateFmt:'yyyy-MM-dd HH:mm:ss',
 minDate:'2008-03-08 11:30:00'})">
                         </div>
                         <div class="col-xs-12 col-md-6 col-lg-2" style="margin: 5px 0 5px 0;">
                             <button type="submit" class="btn btn-info">查找</button>
+                            <button type="button" class="btn btn-success" onClick="location.href='{{$controlUrl}}/edit'" style="display: {{$admin == 'admin' ? '' : 'none'}}">新建</button>
                         </div>
                     </div>
                 </div>
@@ -102,15 +100,14 @@ minDate:'2008-03-08 11:30:00'})">
     <!-- /.search-box -->
     <div class="box">
         <div class="box-body" style="min-height: 700px">
-            @if (!empty($_token))
             <div class="col-md-12">
                 <div class="box-body">
                     <table class="table table-bordered">
                         <tr>
+                            <th>ID</th>
                             <th>名称</th>
                             <th>学生</th>
                             <th>老师</th>
-                            <th>课时</th>
                             <th>开始时间</th>
                             <th>结束时间</th>
                             <th>状态</th>
@@ -119,10 +116,10 @@ minDate:'2008-03-08 11:30:00'})">
                         @if(!empty($course))
                             @foreach ($course as $c)
                                 <tr>
-                                    <td>{{$c['name']}}</td>
+                                    <td>{{$c['id']}}</td>
+                                    <td>{{$c['courseName']}}</td>
                                     <td>{{$c['studentName']}}</td>
                                     <td>{{$c['teacherName']}}</td>
-                                    <td>{{$c['period']}}</td>
                                     <td>{{$c['start']}}</td>
                                     <td>{{$c['end']}}</td>
                                     <td>{{$c['status']}}</td>
@@ -137,7 +134,6 @@ minDate:'2008-03-08 11:30:00'})">
                     </table>
                 </div>
             </div>
-            @endif
         </div>
         <!-- /.box-body -->
     </div>

@@ -5,6 +5,14 @@
     <script src="/public/default/js/common/selectPlaceholder.js"></script>
     <script>
         $(function () {
+            var subject = new Vue({
+                el: '#subjects',
+                delimiters: ['<%', '%>'],
+                data: {
+                    selected: "{{!empty($subject['selected']) ? $subject['selected'] : null }}",
+                    options:{!! json_encode($subject['options']) !!}
+                }
+            });
             var student = new Vue({
                 el: '#students',
                 delimiters: ['<%', '%>'],
@@ -22,6 +30,7 @@
                 }
             });
 
+            getPlaceholder("{{empty($subject['selected'])}}", '#subject', "--请选择学科--");
             getPlaceholder("{{empty($teacher['selected'])}}", '#teacher', "--请选择老师--");
             getPlaceholder("{{empty($student['selected'])}}", '#student', "--请选择学生--");
         })
@@ -37,10 +46,12 @@
             <div class="box-body">
                 <!-- body -->
                 <div class="row">
-                    <div class="input-group" style="width:100%; margin-bottom:20px;">
+                    <div class="input-group" style="width:100%; margin-bottom:20px;" id="subjects">
                         <div class="col-xs-12 col-md-6 col-lg-4">
-                            <label for="name">名称</label>
-                            <input id="name" name="name" type="text" class="form-control" placeholder="名称" value="{{!empty($course['name']) ? $course['name'] : ''}}">
+                            <label for="subject">学科</label>
+                            <select class="form-control" id="subject" name="subject" v-model="selected">
+                                <option v-for="option in options" v-bind:value="option.value"> <% option.text %> </option>
+                            </select>
                         </div>
                     </div>
                     <div class="input-group" style="width:100%; margin-bottom:20px;" id="students">

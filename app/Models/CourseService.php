@@ -83,4 +83,12 @@ class CourseService {
         }
         return $course->delete();
     }
+
+    public function getSubjectById($id) {
+        return $this->course->where('id', $id)->pluck('subject');
+    }
+
+    public function getIdByName($name) {
+        return $this->course->where('subject', 'like', "%$name%")->pluck('id');
+    }
 }

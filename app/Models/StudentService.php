@@ -48,11 +48,15 @@ class StudentService {
         return $student->get();
     }
 
-    public function getStudentNameById($id) {
+    public function getNameById($id) {
         return $this->student->where('id', $id)->pluck('name');
     }
 
     public function updateCoursePeriod($id, $data) {
         return $this->student->where('id', $id)->update(['courseInfos' => $data]);
+    }
+
+    public function getIdByName($name) {
+        return $this->student->where('name', 'like', "%$name%")->pluck('id');
     }
 }

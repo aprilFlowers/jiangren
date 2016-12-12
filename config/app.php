@@ -246,9 +246,8 @@ return [
             ],
             '课程管理' => ['icon' => 'fa-book', 'perm' => 'course.*',
                 'children' => [
-                    '学科录入' => ['url' => '/course/index', 'icon'=>'fa-edit', 'perm' => 'course.enter'],
-                    '课程录入' => ['url' => '/course/index', 'icon'=>'fa-edit', 'perm' => 'course.enter'],
-                    '课程查询' => ['url' => '/course/query', 'icon'=>'fa-search', 'perm' => 'course.query'],
+                    '学科录入' => ['url' => '/course/subject', 'icon'=>'fa-edit', 'perm' => 'course.subject'],
+                    '课程信息' => ['url' => '/course/index', 'icon'=>'fa-search', 'perm' => 'course.index'],
                     '课表' => ['url' => '/course/timetable', 'icon'=>'fa-calendar-check-o', 'perm' => 'course.tableQuery'],
                 ],
             ],

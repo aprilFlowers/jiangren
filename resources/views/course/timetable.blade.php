@@ -49,6 +49,7 @@
                             },
                             success : function(data) {
                                 alert(data.errorMsg);
+                                window.location = '/course/timetable';
                             }
                         });
                     }
@@ -68,6 +69,19 @@
                     if ($(source).hasClass('assigned')){
                         //update
                         $(this).append(source);
+                        $.ajax({
+                            url : '/course/markTimetable/saveData',
+                            dataType : 'json',
+                            data :{
+                                id : $(source).attr('id'),
+                                index : $(this).attr('id'),
+                                content : $(source).html()
+                            },
+                            success : function(data) {
+                                alert(data.errorMsg);
+                                window.location = '/course/timetable';
+                            }
+                        });
                     } else {
                         //add
                         var c = $(source).clone().addClass('assigned');
@@ -75,16 +89,18 @@
                         c.draggable({
                             revert:true
                         });
+                        console.log(11);
                         // save event data
                         $.ajax({
                             url : '/course/markTimetable/saveData',
                             dataType : 'json',
                             data :{
-                                id : $(this).attr('id'),
+                                index : $(this).attr('id'),
                                 content : c.html()
                             },
                             success : function(data) {
                                 alert(data.errorMsg);
+                                window.location = '/course/timetable';
                             }
                         });
                     }

@@ -34,7 +34,11 @@ class TeacherService {
         return $this->teacher->find($id)->delete();
     }
 
-    public function getTeacherNameById($id) {
+    public function getNameById($id) {
         return $this->teacher->where('id', $id)->pluck('name');
+    }
+
+    public function getIdByName($name) {
+        return $this->teacher->where('name', 'like', "%$name%")->pluck('id');
     }
 }

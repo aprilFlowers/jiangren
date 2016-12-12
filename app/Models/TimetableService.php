@@ -43,7 +43,7 @@ class TimetableService {
     public function getTableInfos($teacher = '', $openTime = '', $endTime = '', $student = '') {
         $timetable = $this->timetable;
         if (!empty($teacher)) {
-            $timetable = $timetable->where('teacher', 'like', "%$teacher%");
+            $timetable = $timetable->where('teacher', $teacher);
         }
         if (!empty($openTime)) {
             $timetable = $timetable->whereRaw("start >= '$openTime'");
@@ -59,14 +59,6 @@ class TimetableService {
 
     public function updateCourseStatus($id) {
         return $this->timetable->where('id', $id)->update(['status' => 1]);
-    }
-
-    public function deleteCourseByTeacher($tId) {
-        return $this->deleteCourse($tId, '');
-    }
-
-    public function deleteCourseByStudent($sId) {
-        return $this->deleteCourse('', $sId);
     }
 
 }

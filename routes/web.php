@@ -48,14 +48,17 @@ Route::post('/student/update', 'StudentController@update');
 Route::get('/student/index/delete', 'StudentController@delete');
 
 //course
+Route::get('/course/subject', 'CourseController@subject');
+Route::get('/course/subject/edit', 'CourseController@subjectEdit');
+Route::post('/course/subject/update', 'CourseController@subjectUpdate');
+Route::get('/course/subject/delete', 'CourseController@subjectDelete');
 Route::get('/course/index', 'CourseController@index');
+Route::post('/course/index', 'CourseController@index');
 Route::get('/course/index/edit', 'CourseController@edit');
-Route::post('/course/update', 'CourseController@update');
+Route::post('/course/index/update', 'CourseController@update');
 Route::get('/course/index/delete', 'CourseController@delete');
-Route::get('/course/query', 'CourseController@query');
-Route::post('/course/query', 'CourseController@query');
-Route::post('/course/query/clickCourse', 'CourseController@clickCourse');
-Route::get('/course/query/clickCourse', 'CourseController@clickCourse');
+Route::post('/course/index/clickCourse', 'CourseController@clickCourse');
+Route::get('/course/index/clickCourse', 'CourseController@clickCourse');
 Route::get('/course/timetable', 'CourseController@timetable');
 Route::post('/course/timetable', 'CourseController@timetable');
 Route::get('/course/markTimetable/saveData', 'CourseController@saveTimetableData');

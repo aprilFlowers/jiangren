@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\CourseService;
 use App\Models\StudentService;
+use App\Models\SubjectService;
+use App\Models\TeacherService;
 use Illuminate\Http\Request;
 
 class StudentController extends Controller
@@ -39,7 +41,9 @@ class StudentController extends Controller
         $this->initSearchBar($request, $params);
 
         if($id){
+            $params['student']['courses'] = [];
             $student = new StudentService();
+            $cou = new CourseService();
             $studentInfos = $student->getInfoById($id);
             $params['grade']['selected'] = $studentInfos['grade'];
             $keys = ['id', 'name', 'phoneNum'];
@@ -60,13 +64,14 @@ class StudentController extends Controller
 
             if(!empty($studentInfos['courseInfos'])) {
                 $courseInfos = json_decode($studentInfos['courseInfos'], true);
-                $studentCourses = [];
-                $courseConf = config('language.course');
-                foreach ($courseInfos as $courseInfo) {
-                    $courseInfo['courseName'] = $courseConf[$courseInfo['courseId']];
-                    $studentCourses[] = $courseInfo;
+                foreach ($courseInfos as $k => $v) {
+                    $_courseInfo = $cou->getPeriodBySid($v['courseId'], $id);
+                    $period = $_courseInfo['period'];
+                    $id = $_courseInfo['id'];
+                    $teacher = $_courseInfo['teacher'];
+                    $restPeriod = $period - $v['lastPeriod'];
+                    $this->getCourseInfoOpts($params, intval($v['courseId']), intval($teacher), $period, $id, $restPeriod);
                 }
-                $params['student']['courses'] = $studentCourses;
             }
         }
 
@@ -107,13 +112,27 @@ class StudentController extends Controller
         $data['family'] = json_encode($familyDatas);
 
         // course
+        $couService = new CourseService();
         $courseDatas = [];
         $courseIds = $request->input('courseId', []);
-        $courseNums = $request->input('courseNum', []);
-        $courseConf = config('language.course');
-        foreach ($courseIds as $i => $courseId) {
-            if (!empty($courseConf[$courseId])) {
-                $courseDatas[] = ['courseId' => $courseId, 'courseNum' => $courseNums[$i]];
+        $cIds = $request->input('cIds', []);
+        $teacherIds = $request->input('teacher', []);
+        $periods = $request->input('period', []);
+        $restPeriods = $request->input('restPeriod', []);
+        for ($j = 0; $j < count($courseIds); $j++) {
+            $lastPeriod = $restPeriods[$j] ? $periods[$j] - $restPeriods[$j] : 0;
+            $courseDatas[] = ['courseId' => $courseIds[$j], 'lastPeriod' => $lastPeriod];
+            // update course infos
+            $courseData = [
+                'subject' => $courseIds[$j],
+                'student' => $id,
+                'teacher' => $teacherIds[$j],
+                'period' => $periods[$j],
+            ];
+            if($cIds[$j]){
+                $r = $couService->updateOne($cIds[$j], $courseData);
+            }else{
+                $r = $couService->createOne($courseData);
             }
         }
         $data['courseInfos'] = json_encode($courseDatas);
@@ -205,26 +224,17 @@ class StudentController extends Controller
         $params['grade']['selected'] = '';
         $params['grade']['options']  = [];
         $gradeConf = config('language.grade');
-        foreach($gradeConf as $_ck => $grade){
-            $params['grade']['options'][] = ['value' => $_ck, 'text' => $grade];
+        foreach($gradeConf as $_gk => $grade){
+            $params['grade']['options'][] = ['value' => $_gk, 'text' => $grade];
         }
-        $params['course']['selected'] = '';
-        $params['course']['options']  = [];
-        $courseConf = config('language.course');
-        foreach($courseConf as $_ck => $course){
-            $params['course']['options'][] = ['value' => $_ck, 'text' => $course];
-        }
+
         $familyDefault[] = [
             'parentName' => '',
             'contactNum' => '',
             'workAddress' => '',
         ];
         $params['students']['familyDefault'] = json_encode($familyDefault);
-        $courseDefault[] = [
-            'courseId' => '',
-            'courseNum' => '',
-        ];
-        $params['students']['courseDefault'] = json_encode($courseDefault);
+        $this->getCourseInfoOpts($params);
         if($request['_token']){
             $params['_token'] = $request['_token'];
             if(!empty($name = $request->input('name'))){
@@ -237,5 +247,26 @@ class StudentController extends Controller
                 $params['phoneNum'] = $phoneNum;
             }
         }
+    }
+
+    protected function getCourseInfoOpts(&$params, $courseSel = '', $teacherSel = '', $period = '', $id = '', $restPeriod = '') {
+        $sub = new SubjectService();
+        $tea = new TeacherService();
+        $courseInfos['course']['selected'] = $courseSel;
+        $courseInfos['teacher']['selected'] = $teacherSel;
+        $courseConf = $sub->getSubject();
+        $teacherConf = $tea->getTeachers();
+        foreach($courseConf as $course){
+            $courseInfos['course']['options'][] = ['value' => $course['id'], 'text' => $course['name']];
+        }
+        foreach($teacherConf as $teacher){
+            $courseInfos['teacher']['options'][] = ['value' => $teacher['id'], 'text' => $teacher['name']];
+        }
+        $courseInfos['period']= $period;
+        $courseInfos['restPeriod'] = $restPeriod;
+        $courseInfos['id'] = $id;
+        $params['courseOpts'] = $courseInfos['course']['options'];
+        $params['teacherOpts'] = $courseInfos['teacher']['options'];
+        $params['student']['courses'][] = $courseInfos;
     }
 }

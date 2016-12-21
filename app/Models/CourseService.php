@@ -25,6 +25,10 @@ class CourseService {
         return $this->course->where('id', $id)->first();
     }
 
+    public function getPeriodBySid($cid, $sid) {
+        return $this->course->where('subject', $cid)->where('student', $sid)->first();
+    }
+
     public function createOne($params) {
         foreach ($params as $key => $value) {
             $this->course->$key = $value;
@@ -37,6 +41,7 @@ class CourseService {
         foreach ($params as $key => $value) {
             $course->$key = $value;
         }
+//        dd($course, $params);
         return $course->save() ? $course->id : false;
     }
 
@@ -61,8 +66,8 @@ class CourseService {
         return $course->get();
     }
 
-    public function updateCourseStatus($id) {
-        return $this->course->where('id', $id)->update(['status' => 1]);
+    public function updateCourseStatus($id, $status) {
+        return $this->course->where('id', $id)->update(['status' => $status]);
     }
 
     public function deleteCourseByTeacher($tId) {

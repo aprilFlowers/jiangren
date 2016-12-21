@@ -12,8 +12,16 @@
             }
 
             function courseInfo() {
-                this.courseId = null;
-                this.courseNum = null;
+                this.course = {
+                    selected : "--请选择课程--",
+                    options : {!! json_encode($courseOpts) !!}
+                };
+                this.teacher = {
+                    selected : "--请选择老师--",
+                    options : {!! json_encode($teacherOpts) !!},
+                };
+                this.period = null;
+                this.restPeriod = null;
             }
 
             var sex = new Vue({
@@ -46,11 +54,10 @@
                 }
             });
             var course = new Vue({
-                el: '#course',
+                el: '#courses',
                 delimiters: ['<%', '%>'],
                 data: {
-                    courses: {!! !empty($student['courses']) ? json_encode($student['courses']) : $students['courseDefault'] !!},
-                    options:{!! json_encode($course['options']) !!}
+                    courses:{!! json_encode($student['courses']) !!}
                 },
                 methods: {
                     addCourse: function () {
@@ -59,15 +66,15 @@
                     }
                 }
             });
-
             getPlaceholder("{{empty($sex['selected'])}}", '#sex', "--请选择性别--");
             getPlaceholder("{{empty($grade['selected'])}}", '#grade', "--请选择年级--");
-            $(".select2").select2();
 
             @if(!\Entrust::can('student.enter') || !empty($_GET['preview']))
               $('.nav-tabs-custom input').attr('readonly', true);
-              $('.nav-tabs-custom select').attr('readonly', true);
+              $('.nav-tabs-custom select').attr('disabled', true);
               $('.nav-tabs-custom button').hide();
+            @else
+              $('.nav-tabs-custom input').attr('readonly', true);
             @endif
         })
     </script>
@@ -184,21 +191,29 @@
                   <div class="box-body">
                     <div class="form-group">
                       <div class="row" id="course">
-                        <div v-for="course in courses">
-                          <div class="col-lg-4 col-md-4 col-sm-12">
+                        <div v-for="eachCourse in courses">
+                          <div class="col-lg-3 col-md-3 col-sm-12">
                             <label>科目</label>
-                            <select class="form-control" id="courseId" name="courseId[]" v-model="course.courseId">
-                              <option v-for="option in options" v-bind:value="option.value"> <% option.text %>
+                            <select class="courseId form-control" name="courseId[]" v-model="eachCourse.course.selected">
+                              <option v-for="option in eachCourse.course.options" v-bind:value="option.value"> <% option.text %>
                               </option>
                             </select>
                           </div>
-                          <div class="col-lg-4 col-md-4 col-sm-12">
-                            <label>课时</label>
-                            <input type="text" class="form-control" placeholder="课时" name="courseNum[]" style="margin-bottom:10px;" v-bind:value="course.courseNum" v-model="course.courseNum">
+                            <div class="col-lg-3 col-md-3 col-sm-12">
+                                <label>老师</label>
+                                <select class="teacher form-control" name="teacher[]" v-model="eachCourse.teacher.selected">
+                                    <option v-for="option in eachCourse.teacher.options" v-bind:value="option.value"> <% option.text %>
+                                    </option>
+                                </select>
+                            </div>
+                          <div class="col-lg-3 col-md-3 col-sm-12">
+                            <label>总课时</label>
+                            <input type="text" class="form-control" placeholder="课时" name="period[]" style="margin-bottom:10px;" v-model="eachCourse.period">
+                            <input type="text" class="form-control" name="cIds[]" v-model="eachCourse.id" style="display: none;">
                           </div>
-                          <div class="col-lg-4 col-md-4 col-sm-12">
+                          <div class="col-lg-3 col-md-3 col-sm-12">
                             <label>剩余课时</label>
-                            <input type="text" class="form-control" style="margin-bottom:10px;" disabled>
+                            <input type="text" class="form-control" placeholder="剩余课时" name="restPeriod[]" style="margin-bottom:10px;" v-model="eachCourse.restPeriod">
                           </div>
                         </div>
                         <div class="col-lg-6">

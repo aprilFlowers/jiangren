@@ -57,8 +57,8 @@ class TimetableService {
         return $timetable->get();
     }
 
-    public function updateCourseStatus($id) {
-        return $this->timetable->where('id', $id)->update(['status' => 1]);
+    public function updateCourseStatus($id , $status) {
+        return $this->timetable->where('id', $id)->update(['status' => $status]);
     }
 
 }

@@ -104,7 +104,7 @@ class CourseController extends Controller
         if(\Entrust::hasRole(['admin'])) {
             $params['admin'] = 'admin';
         }
-        return view('course.query', $params);
+        return view('course.index', $params);
     }
 
     public function edit(Request $request) {
@@ -130,46 +130,6 @@ class CourseController extends Controller
         return view('course.edit', $params);
     }
 
-    public function update(Request $request) {
-        $id = $request->input('id');
-        $keys = ['subject', 'student', 'teacher', 'period'];
-        foreach ($keys as $key){
-            $data[$key] = $request->input($key, '');
-        }
-        $couService = new CourseService();
-//        $stuService = new StudentService();
-//        $hisCourseData = $couService->getInfoById($id);
-//        $hisPeriod = $hisCourseData['period'];
-
-        if($id){
-            $res = $couService->updateOne($id, $data);
-        }else{
-            $data['status'] = 0;
-            $res = $couService->createOne($data);
-        }
-        // update student courseInfos
-//        $_data = [];
-//        $stuInfos = $stuService->getInfoById($data['student']);
-//        $courseInfos = json_decode($stuInfos['courseInfos'], true);
-//
-//        if($courseInfos) {
-//            foreach ($courseInfos as $course => $period) {
-//                $_data[$course] = $period;
-//                if ($course == $res) {
-//                    $_data[$course] = $data['period'] - ($hisPeriod - $period);
-//                }
-//            }
-//        }
-//        if (!in_array($res, array_keys($courseInfos))) {
-//            $_data[$res] = $data['period'];
-//        }
-//        $coursesData['courseInfos'] = json_encode($_data);
-//        $r = $stuService->updateOne($data['student'], $coursesData);
-//        $dir = "/course/index";
-//
-//        return redirect($dir);
-    }
-
     public function delete(Request $request) {
         $id=$request->input('id', '');
         $couService = new CourseService();
@@ -181,9 +141,9 @@ class CourseController extends Controller
 
         $_data = [];
         if(!empty($courseInfos)) {
-            foreach ($courseInfos as $course => $period) {
-                if ($course != $id) {
-                    $_data[$course] = $period;
+            foreach ($courseInfos as $k => $v) {
+                if ($v['courseId'] != $id) {
+                    $_data[] = $v;
                 }
             }
         }
@@ -194,31 +154,37 @@ class CourseController extends Controller
     }
 
     public function clickCourse(Request $request) {
+        $msg = [];
         $cid = $request->input('cid');
         $sid = $request->input('sid');
-        $cour = new CourseService();
+        $timeTable = new TimetableService();
         $stu = new StudentService();
         $studentInfos = $stu->getInfoById($sid);
-        $courseInfos = $studentInfos['courseInfos'];
-        $courseInfos = json_decode($courseInfos, true);
-        foreach ($courseInfos as $c => $p) {
-            if ($p < 2) {
-                $msg['errorMsg'] = '该课程已确认！';
-                echo json_encode($msg);exit;
+        if(!empty($studentInfos)) {
+            $courseInfos = $studentInfos['courseInfos'];
+            $courseInfos = json_decode($courseInfos, true);
+            $data = [];
+            foreach ($courseInfos as $k => $v) {
+                // update student course infos
+                if ($v['courseId'] == $cid) {
+                    $data[] = [
+                        'courseId' => $v['courseId'],
+                        'lastPeriod' => $v['lastPeriod'] + 2,
+                    ];
+                } else {
+                    $data[] = $v;
+                }
             }
-            if($c == $cid) {
-                $p = $p - 2;
+            $datas = json_encode($data);
+            $r = $stu->updateCoursePeriod($sid, $datas);
+            if ($r) {
+                // update course status
+                $res = $timeTable->updateCourseStatus($cid, 1);
+                $msg['errorMsg'] = $res ? '操作成功！' : '操作失败！';
+            } else {
+                $msg['errorMsg'] = '操作失败！';
             }
-            $data[$c] = $p;
         }
-        $datas = json_encode($data);
-        $r = $stu->updateCoursePeriod($sid, $datas);
-        if($r) {
-            $res = $cour->updateCourseStatus($cid);
-            $msg['errorMsg'] = $res ? '操作成功！' : '操作失败！';
-            echo json_encode($msg);exit;
-        }
-        $msg['errorMsg'] = '操作失败！';
         echo json_encode($msg);
     }
 

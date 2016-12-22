@@ -74,7 +74,6 @@
               $('.nav-tabs-custom select').attr('disabled', true);
               $('.nav-tabs-custom button').hide();
             @else
-              $('.nav-tabs-custom input').attr('readonly', true);
             @endif
         })
     </script>
@@ -213,7 +212,7 @@
                           </div>
                           <div class="col-lg-3 col-md-3 col-sm-12">
                             <label>剩余课时</label>
-                            <input type="text" class="form-control" placeholder="剩余课时" name="restPeriod[]" style="margin-bottom:10px;" v-model="eachCourse.restPeriod">
+                            <input type="text" class="form-control" placeholder="剩余课时" name="restPeriod[]" style="margin-bottom:10px;" v-model="eachCourse.restPeriod" readonly>
                           </div>
                         </div>
                         <div class="col-lg-6">

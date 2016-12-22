@@ -40,9 +40,9 @@ class TimetableService {
         return $this->timetable->where('id', $id)->delete();
     }
 
-    public function getTableInfos($teacher = '', $openTime = '', $endTime = '', $student = '') {
+    public function getTableInfos($teacher = '-1', $openTime = '', $endTime = '', $student = '-1') {
         $timetable = $this->timetable;
-        if (!empty($teacher)) {
+        if (!empty($teacher) && $teacher != -1) {
             $timetable = $timetable->where('teacher', $teacher);
         }
         if (!empty($openTime)) {
@@ -51,7 +51,7 @@ class TimetableService {
         if (!empty($endTime)) {
             $timetable = $timetable->whereRaw("end <= '$endTime'");
         }
-        if (!empty($student)) {
+        if (!empty($student) && $student != -1) {
             $timetable = $timetable->where('student', $student);
         }
         return $timetable->get();

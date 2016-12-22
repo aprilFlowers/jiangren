@@ -62,16 +62,10 @@ class StudentController extends Controller
                 $params['student']['family'] = $familyInfos;
             }
 
-            if(!empty($studentInfos['courseInfos'])) {
-                $courseInfos = json_decode($studentInfos['courseInfos'], true);
-                foreach ($courseInfos as $k => $v) {
-                    $_courseInfo = $cou->getPeriodBySid($v['courseId'], $id);
-                    $period = $_courseInfo['period'];
-                    $id = $_courseInfo['id'];
-                    $teacher = $_courseInfo['teacher'];
-                    $restPeriod = $period - $v['lastPeriod'];
-                    $this->getCourseInfoOpts($params, intval($v['courseId']), intval($teacher), $period, $id, $restPeriod);
-                }
+            $courseInfos = $cou->getCoursesInfos('', $id);
+            foreach ($courseInfos as $courseInfo) {
+                $restPeriod = 0;
+                $this->getCourseInfoOpts($params, $courseInfo->subject, $courseInfo->teacher, $courseInfo->period, $courseInfo->id, $restPeriod);
             }
         }
 
@@ -120,8 +114,8 @@ class StudentController extends Controller
         $periods = $request->input('period', []);
         $restPeriods = $request->input('restPeriod', []);
         for ($j = 0; $j < count($courseIds); $j++) {
-            $lastPeriod = $restPeriods[$j] ? $periods[$j] - $restPeriods[$j] : 0;
-            $courseDatas[] = ['courseId' => $courseIds[$j], 'lastPeriod' => $lastPeriod];
+            //$lastPeriod = $restPeriods[$j] ? $periods[$j] - $restPeriods[$j] : 0;
+            //$courseDatas[] = ['courseId' => $courseIds[$j], 'lastPeriod' => $lastPeriod];
             // update course infos
             $courseData = [
                 'subject' => $courseIds[$j],
@@ -221,10 +215,10 @@ class StudentController extends Controller
         foreach($sexConf as $_sk => $sex){
             $params['sex']['options'][] = ['value' => $_sk, 'text' => $sex];
         }
-        $params['grade']['selected'] = '';
+        $params['grade']['selected'] = '-1';
         $params['grade']['options']  = [];
-        $gradeConf = config('language.grade');
-        foreach($gradeConf as $_gk => $grade){
+        $params['grade']['options'][] = ['value' => -1, 'text' => '全部年级'];
+        foreach(config("language.grade", []) as $_gk => $grade){
             $params['grade']['options'][] = ['value' => $_gk, 'text' => $grade];
         }
 

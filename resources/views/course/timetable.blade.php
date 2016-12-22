@@ -16,6 +16,14 @@
                     options:{!! json_encode($teacher['options']) !!}
                 }
             });
+            var student = new Vue({
+                el: '#students',
+                delimiters: ['<%','%>'],
+                data: {
+                    selected: "{{!empty($student['selected'])?$student['selected']:null}}",
+                    options:{!! json_encode($student['options']) !!}
+                }
+            });
             var week = new Vue({
                 el  : '#weeks',
                 data: {
@@ -40,7 +48,6 @@
                 },
                 onDrop:function(e,source){
                     if(confirm('确认删除！')) {
-                        $(source).remove();
                         $.ajax({
                             url : '/course/markTimetable/deleteData',
                             dataType : 'json',
@@ -48,8 +55,9 @@
                                 id : $(source).attr('id')
                             },
                             success : function(data) {
+                              $(source).remove();
                                 alert(data.errorMsg);
-                                window.location = '/course/timetable';
+                                //window.location = '/course/timetable';
                             }
                         });
                     }
@@ -68,7 +76,6 @@
                     $(this).removeClass('over');
                     if ($(source).hasClass('assigned')){
                         //update
-                        $(this).append(source);
                         $.ajax({
                             url : '/course/markTimetable/saveData',
                             dataType : 'json',
@@ -78,18 +85,17 @@
                                 content : $(source).html()
                             },
                             success : function(data) {
+                              $(this).append(source);
                                 alert(data.errorMsg);
-                                window.location = '/course/timetable';
+                                //window.location = '/course/timetable';
                             }
                         });
                     } else {
                         //add
                         var c = $(source).clone().addClass('assigned');
-                        $(this).append(c);
                         c.draggable({
                             revert:true
                         });
-                        console.log(11);
                         // save event data
                         $.ajax({
                             url : '/course/markTimetable/saveData',
@@ -99,8 +105,12 @@
                                 content : c.html()
                             },
                             success : function(data) {
-                                alert(data.errorMsg);
-                                window.location = '/course/timetable';
+                              $(this).append(c);
+                              alert(data.errorMsg);
+                              if (data.id > 0) {
+                              c.attr('id', data.id);
+                              }
+                                //window.location = '/course/timetable';
                             }
                         });
                     }
@@ -126,6 +136,11 @@
                                 <option v-for="option in options" v-bind:value="option.value"> <% option.text %> </option>
                             </select>
                         </div>
+                        <div class="col-xs-12 col-md-6 col-lg-2" style="margin: 5px 0 5px 0;" id="students">
+                            <select class="form-control" id="student" name="student" v-model="selected">
+                                <option v-for="option in options" v-bind:value="option.value"> <% option.text %> </option>
+                            </select>
+                        </div>
                         <div class="col-xs-12 col-md-6 col-lg-2" style="margin: 5px 0 5px 0;" id="weeks">
                             <input type="text" class="Wdate form-control" style="height:34px;border-color: #d2d6de;" id="week" name="week" placeholder="请选择周数" v-model="week" onClick="WdatePicker({skin:'whyGreen',isShowWeek:true})"/>
                         </div>
@@ -139,27 +154,28 @@
     </div>
     <!-- /.search-box -->
     <div class="box">
+      <div class="box-body" style="min-height: 700px">
         <div class="row">
-            <div class="box-body" style="min-height: 700px">
                 <!-- course list -->
                 <div class="col-md-3">
                     <div class="box box-solid">
                         <div class="box-header with-border">
-                            <h4 class="box-title">基本课程</h4>
+                          <h4 class="box-title">课程列表</h4>
                         </div>
-                        <div class="left box-body">
+                        <div class="box-body">
                             <!-- the events -->
-                            <div id="external-events">
-                                @if(!empty($courseNames))
-                                    @foreach($courseNames as $name => $courseInfo)
-                                        <div class="item" id="{{$courseInfo['id']}}">{{$name}} | {{$courseInfo['teacher']}} | {{$courseInfo['student']}}</div>
+                            <div id="external-events" style="max-height:500px; overflow:auto;">
+                                @if(!empty($courseDragable))
+                                    @foreach($courseDragable as $courseInfo)
+                                        <div class="item" id="{{$courseInfo['id']}}" style="background: #{{$courseInfo['color']}}">{{$courseInfo['courseName']}} | {{$courseInfo['teacher']}} | {{$courseInfo['student']}}</div>
                                     @endforeach
                                 @endif
 
-                                <div class="demo-info" style="margin-bottom:10px">
-                                    <div class="demo-tip icon-tip">&nbsp;</div>
-                                    <div>请将课程拖拽至课程表中</div>
-                                </div>
+                            </div>
+                            <div class="demo-info" style="margin-bottom:10px">
+                              <div class="demo-tip icon-tip">&nbsp;</div>
+                              <div>添加课程：请将课程拖拽至课程表中</div>
+                              <div>删除课程：请将课程拖回至本列表中</div>
                             </div>
                         </div>
                         <!-- /.box-body -->
@@ -168,20 +184,20 @@
                 <!-- end course list -->
                 <!-- right timetable -->
                 <div class="col-md-9">
+                    <div class="right box box-solid">
                     <div class="box-body no-padding">
-                        <div class="right">
                             <h2 style="text-align: center;">{{$time}}</h2>
-                            <table class="table table-bordered" cellspacing="0" width="100%">
+                            <table class="timetable" cellspacing="0" width="100%" style="text-align:center; word-break:break-all; word-wrap:break-word;">
                                 <thead>
                                 <tr>
-                                    <td class="blank">节次\星期</td>
-                                    <td class="title">星期一</td>
-                                    <td class="title">星期二</td>
-                                    <td class="title">星期三</td>
-                                    <td class="title">星期四</td>
-                                    <td class="title">星期五</td>
-                                    <td class="title">星期六</td>
-                                    <td class="title">星期日</td>
+                                    <td class="blank" width="12.5%">节次\星期</td>
+                                    <td class="title" width="12.5%">星期一</td>
+                                    <td class="title" width="12.5%">星期二</td>
+                                    <td class="title" width="12.5%">星期三</td>
+                                    <td class="title" width="12.5%">星期四</td>
+                                    <td class="title" width="12.5%">星期五</td>
+                                    <td class="title" width="12.5%">星期六</td>
+                                    <td class="title" width="12.5%">星期日</td>
                                 </tr>
                                 </thead>
                                 @foreach ($sectionList as $sec)
@@ -191,7 +207,7 @@
                                         <td class="drop" id="{{$id}}">
                                             @if (!empty($table[$id]))
                                                 @foreach ($table[$id] as $t)
-                                                    <div class="item assigned {{$t['status'] ? 'clicked' : ''}}" id="{{$t['id']}}">{{$t['content']}}</div>
+                                                    <div class="item assigned {{$t['status'] ? 'clicked' : ''}}" id="{{$t['id']}}" style="background: #{{$t['color']}}">{{$t['content']}}</div>
                                                 @endforeach
                                             @endif
                                         </td>
@@ -199,7 +215,7 @@
                                     </tr>
                                 @endforeach
                             </table>
-                        </div>
+                    </div>
                     </div>
                     <!-- /.box-body -->
                 </div>

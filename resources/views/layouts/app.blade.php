@@ -20,6 +20,9 @@
   <!-- fullCalendar 2.2.5-->
   <link rel="stylesheet" href="/public/default/css/fullcalendar.min.css">
   <link rel="stylesheet" href="/public/default/css/fullcalendar.print.css" media="print">
+  <!-- datatable-->
+  <link  rel="stylesheet" href="/public/default/css/dataTables.bootstrap.css">
+  <link  rel="stylesheet" href="/public/default/css/dataTables.css">
   <!-- Theme style -->
   <link rel="stylesheet" href="/public/default/css/AdminLTE.min.css">
   <!-- AdminLTE Skins. Choose a skin from the css/skins
@@ -222,6 +225,8 @@
 <!-- ChartJS 1.0.1 -->
 <script src="/public/default/js/Chart.min.js"></script>
 <script src="/public/default/js/select2.full.min.js"></script>
+<!-- datatable -->
+<script src="/public/default/js/common/dataTables.js"></script>
 <!-- AdminLTE dashboard demo (This is only for demo purposes) -->
 {{--<script src="/public/default/js/dashboard2.js"></script>--}}
 <!-- AdminLTE for demo purposes -->

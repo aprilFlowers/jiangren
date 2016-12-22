@@ -43,6 +43,7 @@ class CourseController extends Controller
     public function subjectUpdate(Request $request) {
         $id = $request->input('id');
         $data['name'] = $request->input('name');
+        $data['color'] = $request->input('color');
 
         $subject = new SubjectService();
         if($id){
@@ -69,38 +70,18 @@ class CourseController extends Controller
         $params['controlUrl'] = '/course/index';
         $params['admin'] = '';
         $this->initSearchBar($request, $params);
+
         $timetable = new TimetableService();
-        $tableInfos = $timetable->getTableInfos();
+        $tableInfos = $timetable->getTableInfos($params['teacher']['selected'],$params['openTime']['selected'],$params['endTime']['selected'],$params['student']['selected']);
         if(!empty($tableInfos)) {
             foreach ($tableInfos as $k => $course) {
                 $this->showWords($course);
-                $course['status'] = $course['status'] ? '已确认' : '未确认';
                 $defaultData[] = $course;
-
+                $params['course'][] = $course;
             }
         }
         $params['course'] = $defaultData;
 
-        $keys = ['student', 'teacher', 'openTime', 'endTime'];
-        foreach ($keys as $key){
-            if (in_array($key, ['openTime', 'endTime'])) {
-                $data[$key] = $request->input($key) ? date('Y-m-d H:i:s', strtotime($request->input($key))) : '';
-            }else {
-                $data[$key] = $request->input($key, '');
-            }
-        }
-        $timetable = new TimetableService();
-        if($request['_token']) {
-            $params['course'] = [];
-            $courseInfos = $timetable->getTableInfos($data['teacher'], $data['openTime'], $data['endTime'], $data['student']);
-            if(!empty($courseInfos)) {
-                foreach ($courseInfos as $courseInfo) {
-                    $course = $courseInfo;
-                    $this->showWords($course);
-                    $params['course'][] = $course;
-                }
-            }
-        }
         if(\Entrust::hasRole(['admin'])) {
             $params['admin'] = 'admin';
         }
@@ -194,6 +175,7 @@ class CourseController extends Controller
         $params['controlUrl'] = '/course/timetable';
         $this->initSearchBar($request, $params);
         $tId = $request->input('teacher');
+        $sId = $request->input('student');
         $week = $request->input('week');
         $date = date('Y-m-d');
         $first = 1;
@@ -204,13 +186,13 @@ class CourseController extends Controller
             $date = $week ? date('Y-m-d', strtotime($week)) : $date;
         }
 
-        $courseInfos = $course->getCourses();
+        $courseInfos = $course->getCoursesInfos($tId, $sId);
 
         $w = date('w', strtotime($date));
         $week_start = date('Y-m-d', strtotime("$date -".($w ? $w-$first : 6).'days'));
         $week_end = date('Y-m-d', strtotime("$week_start +6days"));
 
-        $tableInfos = $timetable->getTableInfos($tId, $week_start, $week_end);
+        $tableInfos = $timetable->getTableInfos($tId, $week_start, $week_end, $sId);
         $params['time'] = $week_start.'  --  '.$week_end;
 
         $this->formatTableData($tableInfos, $courseInfos, $params);
@@ -257,6 +239,7 @@ class CourseController extends Controller
             $res = $timetable->updateOne($id, $data);
         }
 
+        $msg['id'] = $res ? $res : -1;
         $msg['errorMsg'] = $res ? '操作成功' : '操作失败！';
         return json_encode($msg);
     }
@@ -274,13 +257,16 @@ class CourseController extends Controller
 
     protected function formatTableData($tableInfos, $courseInfos, &$params) {
         $params['table'] = [];
+        $params['courseDragable'] = [];
         if(!empty($courseInfos)) {
             foreach ($courseInfos as $courseInfo) {
                 $this->showWords($courseInfo);
-                $params['courseNames'][$courseInfo['courseName']] = [
+                $params['courseDragable'][] = [
                     'id' => $courseInfo['id'],
+                    'courseName' => $courseInfo['courseName'],
                     'teacher' => $courseInfo['teacherName'],
                     'student' => $courseInfo['studentName'],
+                    'color' => $courseInfo['courseColor'],
                 ];
             }
         }
@@ -292,7 +278,8 @@ class CourseController extends Controller
                 $data = [
                     'id' => $tableInfo['id'],
                     'status' => $tableInfo['status'],
-                    'content' => $content
+                    'content' => $content,
+                    'color' => $tableInfo['courseColor'],
                 ];
                 if(!empty($params['table']) && in_array($tableInfo['index'], array_keys($params['table']))) {
                     $params['table'][$tableInfo['index']][] = $data;
@@ -328,10 +315,17 @@ class CourseController extends Controller
             }
         }
         if(!empty($course['subject'])) {
-            $courseName = $sub->getNameById($course['subject']);
+            $courseObj = $sub->getInfoById($course['subject']);
+            if (!empty($courseObj)) {
+                $courseName = $courseObj->name;
+                $courseColor = $courseObj->color;
+            }
         }
         if (!empty($courseName)) {
-            $course['courseName'] = $courseName[0];
+            $course['courseName'] = $courseName;
+        }
+        if (!empty($courseColor)) {
+            $course['courseColor'] = $courseColor;
         }
     }
 
@@ -343,15 +337,17 @@ class CourseController extends Controller
         foreach($allSubject as $k => $subject){
             $params['subject']['options'][] = ['value' => $subject['id'], 'text' => $subject['name']];
         }
-        $params['teacher']['selected'] = '';
+        $params['teacher']['selected'] = '-1';
         $params['teacher']['options']  = [];
+        $params['teacher']['options'][] = ['value' => -1, 'text' => '全部老师'];
         $teacher = new TeacherService();
         $allTeachers = $teacher->getTeachers();
         foreach($allTeachers as $k => $teacher){
             $params['teacher']['options'][] = ['value' => $teacher['id'], 'text' => $teacher['name']];
         }
-        $params['student']['selected'] = '';
+        $params['student']['selected'] = '-1';
         $params['student']['options']  = [];
+        $params['student']['options'][] = ['value' => -1, 'text' => '全部学生'];
         $student = new StudentService();
         $allStudents = $student->getStudents();
         foreach($allStudents as $k => $student){
@@ -365,7 +361,9 @@ class CourseController extends Controller
         }
         $params['sectionList'] = $allSections;
 
-        $params['week']['selected'] = '';
+        $params['week']['selected'] = date('Y-m-d');
+        $params['openTime']['selected'] = date('Y-m-d H:i:s', strtotime('-14 day'));
+        $params['endTime']['selected'] = date('Y-m-d H:i:s');
 
         if($request['_token']){
             $params['_token'] = $request['_token'];

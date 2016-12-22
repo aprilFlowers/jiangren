@@ -51,10 +51,10 @@ class CourseService {
 
     public function getCoursesInfos($teacher = '', $student = '', $openTime = '', $endTime = '') {
         $course = $this->course;
-        if (!empty($student)) {
+        if (!empty($student) && $student != -1) {
             $course = $course->where('student', $student);
         }
-        if (!empty($teacher)) {
+        if (!empty($teacher) && $teacher != -1) {
             $course = $course->where('teacher', $teacher);
         }
         if (!empty($openTime)) {

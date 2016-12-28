@@ -12,26 +12,26 @@
                 el: '#teachers',
                 delimiters: ['<%','%>'],
                 data: {
-                    selected: "{{!empty($teacher['selected'])?$teacher['selected']:null}}",
-                    options:{!! json_encode($teacher['options']) !!}
+                    selected: "{{!empty($vueOptions['teacher']['selected'])?$vueOptions['teacher']['selected']:''}}",
+                    options:{!! json_encode($vueOptions['teacher']['options']) !!}
                 }
             });
+            teacher.options.unshift({'value':'', 'text':'全部教师'});
             var student = new Vue({
                 el: '#students',
                 delimiters: ['<%','%>'],
                 data: {
-                    selected: "{{!empty($student['selected'])?$student['selected']:null}}",
-                    options:{!! json_encode($student['options']) !!}
+                  selected: "{{!empty($vueOptions['student']['selected'])?$vueOptions['student']['selected']:''}}",
+                    options:{!! json_encode($vueOptions['student']['options']) !!}
                 }
             });
-            var week = new Vue({
-                el  : '#weeks',
+            student.options.unshift({'value':'', 'text':'全部学生'});
+            var openTime = new Vue({
+                el  : '#openTimes',
                 data: {
-                    week: "{{!empty($week['selected']) ? $week['selected'] : ''}}"
+                  openTime: "{{!empty($vueOptions['openTime']['selected']) ? $vueOptions['openTime']['selected'] : ''}}"
                 }
             });
-            getPlaceholder("{{empty($teacher['selected'])}}", '#teacher', "--请选择老师--");
-            week.week = "{{$week['selected']}}";
 
             $('.item').draggable({
                 revert:true,
@@ -55,8 +55,10 @@
                                 id : $(source).attr('id')
                             },
                             success : function(data) {
-                              $(source).remove();
                                 alert(data.errorMsg);
+                                if (data.errorCode == 0) {
+                                  $(source).remove();
+                                }
                                 //window.location = '/course/timetable';
                             }
                         });
@@ -82,7 +84,6 @@
                             data :{
                                 id : $(source).attr('id'),
                                 index : $(this).attr('id'),
-                                content : $(source).html()
                             },
                             success : function(data) {
                               $(this).append(source);
@@ -101,16 +102,17 @@
                             url : '/course/markTimetable/saveData',
                             dataType : 'json',
                             data :{
+                                courseId : $(source).attr('id'),
                                 index : $(this).attr('id'),
-                                content : c.html()
                             },
                             success : function(data) {
-                              $(this).append(c);
                               alert(data.errorMsg);
-                              if (data.id > 0) {
-                              c.attr('id', data.id);
+                              if (data.errorCode == 0) {
+                                console.log($(this));
+                                console.log(c);
+                                $(this).append(c);
+                                c.attr('id', data.data.id);
                               }
-                                //window.location = '/course/timetable';
                             }
                         });
                     }
@@ -123,7 +125,7 @@
 
 @section('content')
     <div class="box">
-        <form method="post" action="{{$controlUrl}}" id="myForm">
+        <form method="post" action="/course/timetable" id="myForm">
             {{ csrf_field() }}
             <input type="hidden" name="type_name"
                    value="{{!empty($globalBreadcrumb) ? $globalBreadcrumb[count($globalBreadcrumb)-1]['name'] : ''}}">
@@ -141,8 +143,8 @@
                                 <option v-for="option in options" v-bind:value="option.value"> <% option.text %> </option>
                             </select>
                         </div>
-                        <div class="col-xs-12 col-md-6 col-lg-2" style="margin: 5px 0 5px 0;" id="weeks">
-                            <input type="text" class="Wdate form-control" style="height:34px;border-color: #d2d6de;" id="week" name="week" placeholder="请选择周数" v-model="week" onClick="WdatePicker({skin:'whyGreen',isShowWeek:true})"/>
+                        <div class="col-xs-12 col-md-6 col-lg-2" style="margin: 5px 0 5px 0;" id="openTimes">
+                            <input type="text" class="Wdate form-control" style="height:34px;border-color: #d2d6de;" id="openTime" name="openTime" placeholder="请选择周数" v-model="openTime" onClick="WdatePicker({skin:'whyGreen',isShowWeek:true})"/>
                         </div>
                         <div class="col-xs-12 col-md-6 col-lg-2" style="margin: 5px 0 5px 0;">
                             <button type="submit" class="btn btn-info">查找</button>
@@ -165,11 +167,9 @@
                         <div class="box-body">
                             <!-- the events -->
                             <div id="external-events" style="max-height:500px; overflow:auto;">
-                                @if(!empty($courseDragable))
-                                    @foreach($courseDragable as $courseInfo)
-                                        <div class="item" id="{{$courseInfo['id']}}" style="background: #{{$courseInfo['color']}}">{{$courseInfo['courseName']}} | {{$courseInfo['teacher']}} | {{$courseInfo['student']}}</div>
-                                    @endforeach
-                                @endif
+                              @foreach($courses as $course)
+                                <div class="item" id="{{$course['id']}}" style="background: #{{$course['subjectInfo']['color']}}">{{$course['subjectInfo']['name']}} | {{$course['teacherInfo']['name']}} | {{$course['studentInfo']['name']}}</div>
+                              @endforeach
 
                             </div>
                             <div class="demo-info" style="margin-bottom:10px">
@@ -200,16 +200,16 @@
                                     <td class="title" width="12.5%">星期日</td>
                                 </tr>
                                 </thead>
-                                @foreach ($sectionList as $sec)
+                                @foreach ($lessons as $lesson)
                                     <tr>
-                                        <td class="time">{{$sec['name']}}</td>
-                                        @foreach($sec['id'] as $id)
-                                        <td class="drop" id="{{$id}}">
-                                            @if (!empty($table[$id]))
-                                                @foreach ($table[$id] as $t)
-                                                    <div class="item assigned {{$t['status'] ? 'clicked' : ''}}" id="{{$t['id']}}" style="background: #{{$t['color']}}">{{$t['content']}}</div>
-                                                @endforeach
-                                            @endif
+                                        <td class="time">{{$lesson['name']}}</td>
+                                        @foreach($lesson['id'] as $id)
+                                        <td class="drop" id="{{$id}}" height="50px">
+                                          @foreach ($table as $t)
+                                          @if ($id == $t['index'])
+                                            <div class="item assigned" id="{{$t['id']}}" style="background: #{{$t['status'] == 2 ? 'ddd' : $t['courseInfo']['subjectInfo']['color']}}">{{$t['courseInfo']['subjectInfo']['name']}} | {{$t['courseInfo']['teacherInfo']['name']}} | {{$t['courseInfo']['studentInfo']['name']}}</div>
+                                          @endif
+                                          @endforeach
                                         </td>
                                         @endforeach
                                     </tr>

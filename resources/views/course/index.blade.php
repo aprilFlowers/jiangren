@@ -10,39 +10,38 @@
         el: '#teachers',
         delimiters: ['<%','%>'],
         data: {
-          selected: "{{!empty($teacher['selected'])?$teacher['selected']:null}}",
-          options:{!! json_encode($teacher['options']) !!}
+          selected: "{{!empty($vueOptions['teacher']['selected'])?$vueOptions['teacher']['selected']:''}}",
+          options:{!! json_encode($vueOptions['teacher']['options']) !!}
         }
       });
+      teacher.options.unshift({'value':'', 'text':'全部教师'});
       var student = new Vue({
         el: '#students',
         delimiters: ['<%','%>'],
         data: {
-          selected: "{{!empty($student['selected'])?$student['selected']:null}}",
-          options:{!! json_encode($student['options']) !!}
+          selected: "{{!empty($vueOptions['student']['selected'])?$vueOptions['student']['selected']:''}}",
+          options:{!! json_encode($vueOptions['student']['options']) !!}
         }
       });
+      student.options.unshift({'value':'', 'text':'全部学生'});
       var openTime = new Vue({
         el  : '#openTime',
         data: {
-          openTime: "{{!empty($openTime['selected']) ? $openTime['selected'] : ''}}"
+          openTime: "{{!empty($vueOptions['openTime']['selected']) ? $vueOptions['openTime']['selected'] : ''}}"
         }
       });
       var endTime = new Vue({
         el  : '#endTime',
         data: {
-          endTime: "{{!empty($endTime['selected']) ? $endTime['selected'] : ''}}"
+          endTime: "{{!empty($vueOptions['endTime']['selected']) ? $vueOptions['endTime']['selected'] : ''}}"
         }
       });
-
-      getPlaceholder("{{empty($teacher['selected'])}}", '#teacher', "--请选择老师--");
-      getPlaceholder("{{empty($student['selected'])}}", '#student', "--请选择学生--");
 
       // setup datatables
       var table = $('#example').DataTable( {
         dom: "<'row'<'col-sm-6'c><'col-sm-2'l><'col-sm-4'f>>" + "<'row'<'col-sm-12'tr>>" + "<'row'<'col-sm-5'i><'col-sm-7'p>>",
         bPaginate: true,
-        order: [[ 4, "desc" ]],
+        order: [[ 6, "desc" ], [ 4, "asc" ]],
         buttons: [ 'copy', {
           extend: 'excel',
           filename: '课程列表'
@@ -56,7 +55,7 @@
       if(confirm('确认课程!')){
         $.ajax({
           type:'get',
-          url:"{{$controlUrl}}/clickCourse",
+          url:"/course/index/clickCourse",
           data:{
             cid : cid,
             sid : sid,
@@ -73,7 +72,7 @@
 
 @section('content')
   <div class="box">
-    <form method="post" action="{{$controlUrl}}" id="myForm">
+    <form method="post" action="/course/index" id="myForm">
       {{ csrf_field() }}
       <input type="hidden" name="type_name"
                            value="{{!empty($globalBreadcrumb) ? $globalBreadcrumb[count($globalBreadcrumb)-1]['name'] : ''}}">
@@ -131,16 +130,16 @@
                 @foreach ($course as $c)
                   <tr>
                     <td>{{$c['id']}}</td>
-                    <td>{{$c['courseName']}}</td>
-                    <td>{{$c['teacherName']}}</td>
-                    <td>{{$c['studentName']}}</td>
+                    <td>{{$c['courseInfo']['subjectInfo']['name']}}</td>
+                    <td>{{$c['courseInfo']['teacherInfo']['name']}}</td>
+                    <td>{{$c['courseInfo']['studentInfo']['name']}}</td>
                     <td>{{$c['start']}}</td>
                     <td>{{$c['end']}}</td>
                     <td>
-                      @if($admin == 'admin' && $c['status'] == 1)
+                      @if($c['status'] == 2)
                         <button type="button" class="btn btn-default" disabled>已确认课程</button>
-                      @else
-                        <button type="button" class="btn btn-warning" onclick="clickCourse({{$c['id']}}, {{$c['student']}})">确认课程</button>
+                      @elseif($admin == 'admin' && $c['status'] == 1)
+                        <button type="button" class="btn btn-warning" onclick="clickCourse({{$c['id']}}, {{$c['courseInfo']['student']}})">确认课程</button>
                       @endif
                     </td>
                   </tr>

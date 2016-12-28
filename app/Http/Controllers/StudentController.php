@@ -10,148 +10,82 @@ use Illuminate\Http\Request;
 
 class StudentController extends Controller
 {
+    public function __construct() {
+        parent::__construct();
+        $this->studentService = new StudentService();
+        $this->courseService = new CourseService();
+        $this->subjectService = new SubjectService();
+    }
+
     public function index(Request $request) {
         $params = [];
-        $params['controlUrl'] = '/student/index';
-        $this->initSearchBar($request, $params);
-
-        $name = $request->input('name');
-        $grade = $request->input('grade');
-        $phoneNum = $request->input('phoneNum');
-
-        $student = new StudentService();
-        if($request['_token']) {
-            $students = $student->getStudentsInfos($name, $grade, $phoneNum);
-        } else {
-            $students = $student->getStudents();
-        }
-        foreach ($students as &$student) {
-            $student['grade'] = config("language.grade." . $student['grade']);
-        }
-        $params['students'] = $students;
-
+        $this->initVueOptions($request, $params);
+        $params['students'] = $this->studentService->getInfoByQuery([
+            'name' => $request->input('name', ''),
+            'grade' => $request->input('grade', ''),
+            'phoneNum' => $request->input('phoneNum', ''),
+        ]);
         return view('student.index', $params);
     }
 
     public function edit(Request $request) {
-        $id = $request->input('id', '');
-
         $params = [];
-        $params['controlUrl'] = '/student';
-        $this->initSearchBar($request, $params);
+        $this->initVueOptions($request, $params);
+        $this->initSubjectOptions($request, $params);
+        $this->initTeacherOptions($request, $params);
 
-        if($id){
-            $params['student']['courses'] = [];
-            $student = new StudentService();
-            $cou = new CourseService();
-            $studentInfos = $student->getInfoById($id);
-            $params['grade']['selected'] = $studentInfos['grade'];
-            $keys = ['id', 'name', 'phoneNum'];
-            foreach ($keys as $key){
-                $params['student'][$key] = $studentInfos[$key];
-            }
-            $baseInfos = json_decode($studentInfos['baseInfos'], true);
-            $params['sex']['selected'] = $baseInfos['sex'];
-            $baseKeys = ['age', 'school', 'address', 'phoneNum', 'mark'];
-            foreach ($baseKeys as $baseKey) {
-                $params['student'][$baseKey]  = $baseInfos[$baseKey];
-            }
-
-            if(!empty($studentInfos['family'])) {
-                $familyInfos = json_decode($studentInfos['family'], true);
-                $params['student']['family'] = $familyInfos;
-            }
-
-            $courseInfos = $cou->getCoursesInfos('', $id);
-            foreach ($courseInfos as $courseInfo) {
-                $restPeriod = 0;
-                $this->getCourseInfoOpts($params, $courseInfo->subject, $courseInfo->teacher, $courseInfo->period, $courseInfo->id, $restPeriod);
+        if($id = $request->input('id')){
+            $student = $this->studentService->getInfoById($id);
+            $params['student'] = $student;
+            if (!empty($student['id'])) {
+                $params['student']['courses'] = $this->courseService->getInfoByQuery(['student' => $student['id']]);
             }
         }
-
         return view('student.edit', $params);
     }
 
     public function update(Request $request) {
-        $id = $request->input('id');
-        $keys = ['name', 'grade', 'phoneNum'];
-        foreach ($keys as $key){
+        // student
+        $data = [];
+        foreach (['name', 'grade', 'phoneNum'] as $key){
             $data[$key] = $request->input($key, '');
         }
-
         // student baseInfos
-        $baseDatas = [];
-        $baseKeys = ['sex', 'age', 'school', 'address', 'phoneNum', 'mark'];
-        foreach ($baseKeys as $baseKey) {
-            $baseDatas[$baseKey] = $request->input($baseKey, '');
+        $data['baseInfos'] = [];
+        foreach (['sex', 'age', 'school', 'address', 'mark'] as $key) {
+            $data['baseInfos'][$key] = $request->input($key, '');
         }
-        $data['baseInfos'] = json_encode($baseDatas);
-
-        // family
-        $familyInfos = [];
-        $familyDatas = [];
-        $familyKeys = ['parentName', 'contactNum', 'workAddress'];
-        foreach ($familyKeys as $familyKey) {
-            $familyInfos[$familyKey] = $request->input($familyKey, []);
-        }
-        if(!empty($familyInfos['parentName'][0])) {
-            for ($i = 0; $i < count($familyInfos['parentName']); $i++) {
-                $familyDatas[$i] = [
-                    'parentName' => $familyInfos['parentName'][$i],
-                    'contactNum' => $familyInfos['contactNum'][$i],
-                    'workAddress' => $familyInfos['workAddress'][$i],
-                ];
+        // student family
+        $data['family'] = [];
+        foreach (['parentName', 'contactNum', 'workAddress'] as $key) {
+            foreach ($request->input($key, []) as $i => $v) {
+                $data['family'][$i][$key] = $v;
             }
         }
-        $data['family'] = json_encode($familyDatas);
-
-        // course
-        $couService = new CourseService();
-        $courseDatas = [];
-        $courseIds = $request->input('courseId', []);
-        $cIds = $request->input('cIds', []);
-        $teacherIds = $request->input('teacher', []);
-        $periods = $request->input('period', []);
-        $restPeriods = $request->input('restPeriod', []);
-        for ($j = 0; $j < count($courseIds); $j++) {
-            //$lastPeriod = $restPeriods[$j] ? $periods[$j] - $restPeriods[$j] : 0;
-            //$courseDatas[] = ['courseId' => $courseIds[$j], 'lastPeriod' => $lastPeriod];
-            // update course infos
-            $courseData = [
-                'subject' => $courseIds[$j],
-                'student' => $id,
-                'teacher' => $teacherIds[$j],
-                'period' => $periods[$j],
+        // student courses
+        $data['courses'] = [];
+        foreach ($request->input('cIds', []) as $i => $cId) {
+            $data['courses'][] = [
+                'id' => $cId,
+                'subject' => $request->input("subjects.$i", ''),
+                'teacher' => $request->input("teachers.$i", ''),
+                'period' => $request->input("periods.$i", ''),
             ];
-            if($cIds[$j]){
-                $r = $couService->updateOne($cIds[$j], $courseData);
-            }else{
-                $r = $couService->createOne($courseData);
-            }
         }
-        $data['courseInfos'] = json_encode($courseDatas);
-
-        $student = new StudentService();
-        if($id){
-            $res = $student->updateOne($id, $data);
+        // create or update student
+        if($id = $request->input('id')){
+            $this->studentService->updateOne($id, $data);
         }else{
-            $res = $student->createOne($data);
+            $this->studentService->createOne($data);
         }
-        $dir = "/student/index";
-
-        return redirect($dir);
+        return redirect("/student/index");
     }
 
     public function delete(Request $request) {
-        $id=$request->input('id', '');
-        $student = new StudentService();
-        $res = $student->deleteOne($id);
-        $course = new CourseService();
-        if($res) {
-            $res = $course->deleteCourseByStudent($id);
+        if ($id = $request->input('id', '')) {
+            $this->studentService->disableOne($id);
         }
-        $dir = "/student/index";
-        return redirect($dir);
+        return redirect("/student/index");
     }
 
     public function query(Request $request) {

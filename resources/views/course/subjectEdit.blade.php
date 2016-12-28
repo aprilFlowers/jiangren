@@ -6,7 +6,7 @@
 
 @section('content')
     <div class="box box-primary">
-        <form method="post" action="{{$controlUrl}}/update">
+        <form method="post" action="/course/subject/update">
             {{ csrf_field() }}
             <input type="hidden" name="id" value="{{!empty($subject['id']) ? $subject['id'] : ''}}">
             <input type="hidden" name="type_name" value="{{!empty($globalBreadcrumb) ? $globalBreadcrumb[count($globalBreadcrumb)-1]['name'] : ''}}">

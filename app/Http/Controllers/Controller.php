@@ -6,6 +6,7 @@ use Illuminate\Foundation\Bus\DispatchesJobs;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use App\Models\VueOptionsTrait;
 
 use View;
 use Session;
@@ -13,16 +14,17 @@ use Session;
 class Controller extends BaseController
 {
     use AuthorizesRequests, DispatchesJobs, ValidatesRequests;
+    use VueOptionsTrait;
 
     protected $nav = [];
 
     public function __construct() {
         $this->middleware(function ($request, $next) {
-            $user = '';
-            $nav = config('app.nav', [])[0];
+            $nav = config('app.nav.0', []);
             $breadcrumb = $this->getBreadcrumb($nav);
 
             // get login user
+            $user = '';
             if(!empty(Session::has('user'))) {
                 $user = Session::get('user.name');
             }

@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 class Subject extends Model {
     protected $connected = 'jr_cms';
     protected $table = 'subject';
-    protected $fillable = ['name', 'color'];
+    protected $fillable = ['name', 'color', 'status'];
     public $timestamps = false;
 
 }

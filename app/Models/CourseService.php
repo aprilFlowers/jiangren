@@ -1,99 +1,119 @@
 <?php
 namespace App\Models;
 
-use DB;
+use App\Models\Service\BaseService;
+use App\Models\SubjectService;
+use App\Models\TeacherService;
+use App\Models\StudentService;
+use App\Models\TimetableService;
 
-class CourseService {
+class CourseService extends BaseService {
     public function __construct(){
-        $this->course = new Course();
-        $this->course->setConnection('jr_cms');
+        parent::__construct(new Course(), 'jr_cms');
     }
 
-    public function getCourses($id = '') {
-        $course = $this->course;
-        if(!empty($id)) {
-            $course = $course->where('id', $id);
+    public function getInfo(){
+        $list = parent::getInfo();
+        $this->appendDetailInfos($list);
+        return $this->formatOutputList($list);
+    }
+
+    public function getAvailable(){
+        $list = parent::getAvailable();
+        $this->appendDetailInfos($list);
+        return $this->formatOutputList($list);
+    }
+
+    public function getInfoById($id){
+        $obj = parent::getInfoById($id);
+        $this->appendDetailInfo($obj);
+        return $obj;
+    }
+
+    public function getInfoByQuery($query, $notEmpty = true) {
+        $list = parent::getInfoByQuery($query, $notEmpty);
+        $this->appendDetailInfos($list);
+        return $this->formatOutputList($list);
+    }
+
+
+    public function getCourseConfirmed($courseId) {
+        $timetableService = new TimetableService();
+        $confirmed = $timetableService->getInfoByQuery(['course' => $courseId, 'status' => 2]);
+        return count($confirmed);
+    }
+
+    protected function appendDetailInfos(&$list) {
+        $subjects = $this->getSubjects();
+        $teachers = $this->getTeachers();
+        $students = $this->getStudents();
+        foreach ($list as &$obj) {
+            $this->appendDetailInfo($obj, $subjects, $teachers, $students);
         }
-        return $course->all();
     }
 
-    public function getCourseNames() {
-        return $this->course->pluck('name');
-    }
-
-    public function getInfoById($id) {
-        return $this->course->where('id', $id)->first();
-    }
-
-    public function getPeriodBySid($cid, $sid) {
-        return $this->course->where('subject', $cid)->where('student', $sid)->first();
-    }
-
-    public function createOne($params) {
-        foreach ($params as $key => $value) {
-            $this->course->$key = $value;
+    protected function appendDetailInfo(&$obj, $subjects = null, $teachers = null, $students = null) {
+        // reuse subjects
+        if (is_null($subjects)) {
+            $subjects = $this->getSubjects();
         }
-        return $this->course->save() ? $this->course->id : false;
-    }
-
-    public function updateOne($id, $params) {
-        $course = $this->course->find($id);
-        foreach ($params as $key => $value) {
-            $course->$key = $value;
+        if (!empty($subjects[$obj['subject']])) {
+            $obj['subjectInfo'] = $subjects[$obj['subject']];
         }
-//        dd($course, $params);
-        return $course->save() ? $course->id : false;
-    }
-
-    public function deleteOne($id) {
-        return $this->course->find($id)->delete();
-    }
-
-    public function getCoursesInfos($teacher = '', $student = '', $openTime = '', $endTime = '') {
-        $course = $this->course;
-        if (!empty($student) && $student != -1) {
-            $course = $course->where('student', $student);
+        // reuse teachers
+        if (is_null($teachers)) {
+            $teachers = $this->getTeachers();
         }
-        if (!empty($teacher) && $teacher != -1) {
-            $course = $course->where('teacher', $teacher);
+        if (!empty($teachers[$obj['teacher']])) {
+            $obj['teacherInfo'] = $teachers[$obj['teacher']];
         }
-        if (!empty($openTime)) {
-            $course = $course->whereRaw("start >= '$openTime'");
+        // reuse students
+        if (is_null($students)) {
+            $students = $this->getStudents();
         }
-        if (!empty($endTime)) {
-            $course = $course->whereRaw("end <= '$endTime'");
+        if (!empty($students[$obj['student']])) {
+            $obj['studentInfo'] = $students[$obj['student']];
         }
-        return $course->get();
+        // course left
+        $confirmed = $this->getCourseConfirmed($obj['id']);
+        $obj['periodLeft'] = $obj['period'] - $confirmed * 2;
     }
 
-    public function updateCourseStatus($id, $status) {
-        return $this->course->where('id', $id)->update(['status' => $status]);
-    }
-
-    public function deleteCourseByTeacher($tId) {
-        return $this->deleteCourse($tId, '');
-    }
-
-    public function deleteCourseByStudent($sId) {
-        return $this->deleteCourse('', $sId);
-    }
-
-    protected function deleteCourse($tId, $sId) {
-        $course = $this->course;
-        if (!empty($tId)) {
-            $course = $course->where('teacher', $tId);
+    protected function getSubjects() {
+        $subjectService = new SubjectService();
+        $subjects = [];
+        foreach ($subjectService->getInfo() as $subject) {
+            $subjects[$subject['id']] = $subject;
         }
-        if (!empty($sId)) {
-            $course = $course->where('student', $sId);
+        return $subjects;
+    }
+
+    protected function getTeachers() {
+        $teacherService = new TeacherService();
+        $teachers = [];
+        foreach ($teacherService->getInfo() as $teacher) {
+            $teachers[$teacher['id']] = $teacher;
         }
-        return $course->delete();
+        return $teachers;
     }
 
-    public function getSubjectById($id) {
-        return $this->course->where('id', $id)->pluck('subject');
+    protected function getStudents() {
+        $studentService = new StudentService();
+        $students = [];
+        foreach ($studentService->getInfo() as $student) {
+            $students[$student['id']] = $student;
+        }
+        return $students;
     }
 
-    public function getIdByName($name) {
-        return $this->course->where('subject', 'like', "%$name%")->pluck('id');
+    protected function formatOutputList(&$list) {
+        $output = [];
+        foreach ($list as $obj) {
+            if (!empty($obj['subjectInfo']) && !empty($obj['teacherInfo']) && !empty($obj['studentInfo'])) {
+                $output[$obj['id']] = $obj;
+            }
+        }
+        $list = $output;
+        return $output;
     }
 }

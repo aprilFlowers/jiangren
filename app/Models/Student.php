@@ -6,5 +6,5 @@ use Illuminate\Database\Eloquent\Model;
 class Student extends Model {
     protected $connected = 'jr_cms';
     protected $table = 'students';
-    protected $fillable = ['name', 'grade', 'phoneNum', 'baseInfos', 'family'];
+    protected $fillable = ['name', 'grade', 'phoneNum', 'baseInfos', 'family', 'status'];
 }

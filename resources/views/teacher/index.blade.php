@@ -23,7 +23,7 @@
 @section('content')
   <div class="box">
     <div class="box-body">
-      <button type="submit" class="btn btn-info pull-right" onClick="location.href='{{$controlUrl}}/edit'">新建</button>
+      <button type="submit" class="btn btn-info pull-right" onClick="location.href='/teacher/index/edit'">新建</button>
     </div>
   </div>
   <div class="box">
@@ -43,7 +43,7 @@
           @if(!empty($teachers))
             @foreach ($teachers as $teacher)
               <tr>
-                <td><a href="{{$controlUrl}}/edit?id={{$teacher['id']}}">{{$teacher['id']}}</a></td>
+                <td><a href="/teacher/index/edit?id={{$teacher['id']}}">{{$teacher['id']}}</a></td>
                 <td>{{$teacher['name']}}</td>
                 <td>
                   @if($teacher['sex'] == 1) 男
@@ -52,8 +52,8 @@
                 </td>
                 <td>{{$teacher['phoneNum']}}</td>
                 <td>
-                  <a class="btn btn-info" href="{{$controlUrl}}/edit?id={{$teacher['id']}}">修改</a>
-                  <a class="btn btn-warning" href="{{$controlUrl}}/delete?id={{$teacher['id']}}" onclick="return confirm('确认删除！')">删除</a>
+                  <a class="btn btn-info" href="/teacher/index/edit?id={{$teacher['id']}}">修改</a>
+                  <a class="btn btn-warning" href="/teacher/index/delete?id={{$teacher['id']}}" onclick="return confirm('确认删除！')">删除</a>
                 </td>
               </tr>
             @endforeach

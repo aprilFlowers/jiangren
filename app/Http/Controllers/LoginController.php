@@ -20,7 +20,7 @@ class LoginController extends Controller {
         $password = $request->input('password', '');
 
         $staff = new StaffService();
-        $res = $staff->loginClick($user, $password);
+        $res = $staff->getWithPWD($user, md5($password));
         if (!empty($res['name'])) {
             Session::put('user', ['id' => $res['id'], 'name' => $res['name']]);
             Auth::login($res);

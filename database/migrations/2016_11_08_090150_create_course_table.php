@@ -15,13 +15,14 @@ class CreateCourseTable extends Migration
     {
         Schema::create('courses', function (Blueprint $table) {
             $table->increments('id');
-            $table->string('name')->index();
+            $table->string('subject')->index();
             $table->string('student')->index();
             $table->string('teacher')->index();
             $table->string('period');
-            $table->date('start')->index();
-            $table->date('end')->index();
-            $table->string('status');
+            $table->tinyInteger('status')->default(1)->index();
+            //$table->date('start')->index();
+            //$table->date('end')->index();
+            //$table->string('status');
         });
     }
 

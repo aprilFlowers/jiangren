@@ -9,11 +9,12 @@
         el: '#grades',
         delimiters: ['<%','%>'],
         data: {
-          selected: "{{!empty($grade['selected'])?$grade['selected']:null}}",
-          options:{!! json_encode($grade['options']) !!}
+          selected: "{{!empty($vueOptions['grade']['selected'])?$vueOptions['grade']['selected']:''}}",
+          options:{!! json_encode($vueOptions['grade']['options']) !!}
         }
       });
-      getPlaceholder("{{empty($grade['selected'])}}", '#grade', "--请选择年级--");
+      grade.options.unshift({'value':'', 'text':'全部年级'});
+      getPlaceholder("{{empty($vueOptions['grade']['selected'])}}", '#grade', "--请选择年级--");
 
       // setup datatables
       var table = $('#example').DataTable( {
@@ -35,7 +36,7 @@
     <div class="box-body">
       <div class="row">
         <div class="input-group" style="width:100%;">
-          <form method="post" action="{{$controlUrl}}" id="myForm">
+          <form method="post" action="/student/index" id="myForm">
             {{ csrf_field() }}
             <input type="hidden" name="type_name" value="{{!empty($globalBreadcrumb) ? $globalBreadcrumb[count($globalBreadcrumb)-1]['name'] : ''}}">
             <div class="col-xs-12 col-md-6 col-lg-2" style="margin: 5px 0 5px 0;">
@@ -50,7 +51,7 @@
               <input type="text" class="form-control" id="phoneNum"  name="phoneNum" placeholder="联系电话" value="{{!empty($phoneNum) ? $phoneNum : ''}}">
             </div>
             <div class="col-xs-12 col-md-6 col-lg-2" style="margin: 5px 0 5px 0;">
-              <button type="button" class="btn btn-success" onClick="location.href='{{$controlUrl}}/edit'">新建</button>
+              <button type="button" class="btn btn-success" onClick="location.href='/student/index/edit'">新建</button>
               <button type="submit" class="btn btn-info">查找</button>
             </div>
           </form>
@@ -75,14 +76,14 @@
           @if(!empty($students))
             @foreach ($students as $student)
               <tr>
-                <td><a href="{{$controlUrl}}/edit?id={{$student['id']}}&preview=1">{{$student['id']}}</a></td>
+                <td><a href="/student/index/edit?id={{$student['id']}}&preview=1">{{$student['id']}}</a></td>
                 <td>{{$student['name']}}</td>
                 <td>{{$student['grade']}}</td>
                 <td>{{$student['phoneNum']}}</td>
                 <td>
-                  <a class="btn btn-info" href="{{$controlUrl}}/edit?id={{$student['id']}}&preview=1">查看</a>
-                  <a class="btn btn-info" href="{{$controlUrl}}/edit?id={{$student['id']}}">修改</a>
-                  <a class="btn btn-warning" href="{{$controlUrl}}/delete?id={{$student['id']}}" onclick="return confirm('确认删除！')">删除</a>
+                  <a class="btn btn-info" href="/student/index/edit?id={{$student['id']}}&preview=1">查看</a>
+                  <a class="btn btn-info" href="/student/index/edit?id={{$student['id']}}">修改</a>
+                  <a class="btn btn-warning" href="/student/index/delete?id={{$student['id']}}" onclick="return confirm('确认删除！')">删除</a>
                 </td>
               </tr>
             @endforeach

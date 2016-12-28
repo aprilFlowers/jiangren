@@ -1,62 +1,104 @@
 <?php
 namespace App\Models;
 
-class StudentService {
+use App\Models\Service\BaseService;
+use App\Models\CourseService;
+
+class StudentService extends BaseService {
     public function __construct(){
-        $this->student = new Student();
-        $this->student->setConnection('jr_cms');
+        parent::__construct(new Student(), 'jr_cms');
     }
 
-    public function getStudents() {
-        return $this->student->all();
+    public function getInfo(){
+        $list = parent::getInfo();
+        return $this->formatOutputList($list);
     }
 
-    public function getInfoById($id) {
-        return $this->student->where('id', $id)->first();
+    public function getAvailable(){
+        $list = parent::getAvailable();
+        return $this->formatOutputList($list);
     }
 
-    public function createOne($params) {
-        foreach ($params as $key => $value) {
-            $this->student->$key = $value;
+    public function getInfoById($id){
+        $obj = parent::getInfoById($id);
+        return $this->formatOutput($obj);
+    }
+
+    public function getInfoByQuery($query, $notEmpty = true) {
+        $list = parent::getInfoByQuery($query, $notEmpty);
+        return $this->formatOutputList($list);
+    }
+
+    public function createOne($params){
+        $_params = $this->formatInput($params);
+        $id = parent::createOne($_params);
+        $res = $this->updateStudentCourses($id, $params);
+        return $id;
+    }
+
+    public function updateOne($id, $params){
+        $_params = $this->formatInput($params);
+        $res = $this->updateStudentCourses($id, $params);
+        return parent::updateOne($id, $_params);
+    }
+
+    public function updateStudentCourses($studentId, $params){
+        $res = true;
+        if ($studentId && !empty($params['courses'])) {
+            $courseService = new CourseService();
+            foreach ($params['courses'] as $course) {
+                if (empty($course['subject'])) break;
+                $course['student'] = $studentId;
+                if (!empty($course['id'])) {
+                    $res &= $courseService->updateOne($course['id'], $course);
+                } else {
+                    $res &= $courseService->createOne($course);
+                }
+            }
         }
-        return $this->student->save() ? $this->student->id : false;
+        return $res;
     }
 
-    public function updateOne($id, $params) {
-        $student = $this->student->find($id);
-        foreach ($params as $key => $value) {
-            $student->$key = $value;
+    public function disableOne($id){
+        $courseService = new CourseService();
+        $res = parent::disableOne($id);
+        foreach($courseService->getInfoByQuery(['student' => $id]) as $course) {
+            $res &= $courseService->disableOne($course['id']);
         }
-        return $student->save();
+        return $res;
     }
 
-    public function deleteOne($id) {
-        return $this->student->find($id)->delete();
-    }
-
-    public function getStudentsInfos($name = '', $grade = '', $phoneNum = '') {
-        $student = $this->student;
-        if (!empty($name)) {
-            $student = $student->where('name', $name);
+    protected function formatInputList($inputList) {
+        foreach ($inputList as $i => $input) {
+            $inputList[$i] = $this->formatInput($input);
         }
-        if ($grade >= 0) {
-            $student = $student->where('grade', $grade);
+        return $inputList;
+    }
+
+    protected function formatOutputList($outputList) {
+        foreach ($outputList as $i => $output) {
+            $outputList[$i] = $this->formatOutput($output);
         }
-        if (!empty($phoneNum)) {
-            $student = $student->where('phoneNum', $phoneNum);
+        return $outputList;
+    }
+
+    protected function formatInput($input) {
+        if (!empty($input['baseInfos']) && is_array($input['baseInfos'])) {
+            $input['baseInfos'] = json_encode($input['baseInfos']);
         }
-        return $student->get();
+        if (!empty($input['family']) && is_array($input['family'])) {
+            $input['family'] = json_encode($input['family']);
+        }
+        return $input;
     }
 
-    public function getNameById($id) {
-        return $this->student->where('id', $id)->pluck('name');
-    }
-
-    public function updateCoursePeriod($id, $data) {
-        return $this->student->where('id', $id)->update(['courseInfos' => $data]);
-    }
-
-    public function getIdByName($name) {
-        return $this->student->where('name', 'like', "%$name%")->pluck('id');
+    protected function formatOutput($output) {
+        if (!empty($output['baseInfos']) && is_string($output['baseInfos'])) {
+            $output['baseInfos'] = json_decode($output['baseInfos'], true);
+        }
+        if (!empty($output['family']) && is_string($output['family'])) {
+            $output['family'] = json_decode($output['family'], true);
+        }
+        return $output;
     }
 }

@@ -26,7 +26,7 @@ return [
     |
     */
 
-    'default' => env('DB_CONNECTION', 'mysql'),
+    'default' => env('DB_CONNECTION', 'jr_cms'),
 
     /*
     |--------------------------------------------------------------------------
@@ -52,6 +52,12 @@ return [
             'prefix' => '',
         ],
 
+        'jr_cms' => [
+            'driver' => 'sqlite',
+            'database' => database_path('database.sqlite'),
+            'prefix' => '',
+        ],
+
         'mysql' => [
             'driver' => 'mysql',
             'host' => env('DB_HOST', 'localhost'),
@@ -63,21 +69,6 @@ return [
             'collation' => 'utf8_unicode_ci',
             'prefix' => '',
             'strict' => true,
-            'engine' => null,
-        ],
-
-
-        'jr_cms' => [
-            'driver' => 'mysql',
-            'host' => '192.168.75.22',
-            'port' => '3306',
-            'database' => 'test',
-            'username' => 'web',
-            'password' => '51..dmz',
-            'charset' => 'utf8',
-            'collation' => 'utf8_unicode_ci',
-            'prefix' => '',
-            'strict' => false,
             'engine' => null,
         ],
 

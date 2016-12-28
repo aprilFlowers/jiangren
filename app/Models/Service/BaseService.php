@@ -10,30 +10,58 @@ class BaseService {
     }
 
     public function getInfo(){
-        return $this->model->orderBy('id', 'desc')->get();
+        return $this->model->get();
+    }
+
+    public function getAvailable(){
+        return $this->model->where('status', 1)->get();
     }
 
     public function getInfoById($id){
         return $this->model->find($id);
     }
 
-    public function createOne($params){
-        foreach ($params as $key=>$value){
-            $this->model->$key = $value;
+    public function getInfoByQuery($query, $notEmpty = true) {
+        $model = clone $this->model;
+        foreach ($query as $key => $value) {
+            if (is_array($value) && count($value) == 2) {
+                if (empty($value[1]) && $notEmpty) continue;
+                if ($value[0] == 'in') {
+                    $model = $model->whereIn($key, $value[1]);
+                } elseif($value[0] == 'not in') {
+                    $model = $model->whereNotIn($key, $value[1]);
+                } else {
+                    $model = $model->where($key, $value[0], $value[1]);
+                }
+            } elseif(!is_array($value)) {
+                if (empty($value) && $notEmpty) continue;
+                $model = $model->where($key, $value);
+            }
         }
+        return $model->get();
+    }
 
-        return $this->model->save()? $this->model->id : false;
+    public function createOne($params){
+        $model = clone $this->model;
+        foreach ($model->getFillable() as $attribute) {
+            if (isset($params[$attribute])) $model->$attribute = $params[$attribute];
+        }
+        return $model->save()? $model->id : false;
     }
 
     public function updateOne($id, $params){
-        $obj = $this->model->find($id);
-        foreach ($params as $key=>$value){
-            $obj->$key = $value;
+        $data = [];
+        foreach ($this->model->getFillable() as $attribute) {
+            if (isset($params[$attribute])) $data[$attribute] = $params[$attribute];
         }
-        return $obj->save();
+        return $this->model->where('id', $id)->update($data);
     }
 
     public function deleteOne($id){
         return $this->model->where('id', $id)->delete();
+    }
+
+    public function disableOne($id){
+        return $this->model->where('id', $id)->update(['status' => 0]);
     }
 }

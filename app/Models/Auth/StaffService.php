@@ -8,8 +8,8 @@ class StaffService extends BaseService {
         parent::__construct(new Staff(), 'jr_cms');
     }
 
-    public function loginClick($staff, $password) {
-        return $this->model->where('name', $staff)->where('password', md5($password))->first();
+    public function getWithPWD($account, $password) {
+        return $this->model->where('name', $account)->where('password', $password)->first();
     }
 
     public function getName(){

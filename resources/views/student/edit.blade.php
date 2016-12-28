@@ -14,11 +14,11 @@
             function courseInfo() {
                 this.course = {
                     selected : "--请选择课程--",
-                    options : {!! json_encode($courseOpts) !!}
+                    options : {!! json_encode($vueOptions['subject']['options']) !!}
                 };
                 this.teacher = {
                     selected : "--请选择老师--",
-                    options : {!! json_encode($teacherOpts) !!},
+                    options : {!! json_encode($vueOptions['teacher']['options']) !!},
                 };
                 this.period = null;
                 this.restPeriod = null;
@@ -28,23 +28,23 @@
                 el: '#sexs',
                 delimiters: ['<%', '%>'],
                 data: {
-                    selected: "{{!empty($sex['selected']) ? $sex['selected'] : null }}",
-                    options:{!! json_encode($sex['options']) !!}
+                  selected: "{{!empty($student['baseInfos']['sex']) ? $student['baseInfos']['sex']:1}}",
+                    options:{!! json_encode($vueOptions['sex']['options']) !!}
                 }
             });
             var grade = new Vue({
                 el: '#grades',
                 delimiters: ['<%', '%>'],
                 data: {
-                    selected: "{{!empty($grade['selected'])?$grade['selected']:null}}",
-                    options:{!! json_encode($grade['options']) !!}
+                    selected: "{{!empty($student['grade'])?$student['grade']:1}}",
+                    options:{!! json_encode($vueOptions['grade']['options']) !!}
                 }
             });
             var parents = new Vue({
                 el: '#parents',
                 delimiters: ['<%', '%>'],
                 data: {
-                    parents: {!! !empty($student['family']) ? json_encode($student['family']) : $students['familyDefault'] !!}
+                    parents: {!! !empty($student['family']) ? json_encode($student['family']) : "[{parentName:'', contactNum:'', workAddress:''}]" !!}
                 },
                 methods: {
                     addParent: function () {
@@ -53,21 +53,24 @@
                     }
                 }
             });
-            var course = new Vue({
+            var studentCourses = {!! !empty($student) ? json_encode($student['courses']) : "[]" !!};
+            if (studentCourses.length == 0) {
+              studentCourses.push(new courseInfo());
+            }
+            var courses = new Vue({
                 el: '#courses',
                 delimiters: ['<%', '%>'],
                 data: {
-                    courses:{!! json_encode($student['courses']) !!}
+                  subjects: {!! json_encode($vueOptions['subject']['options']) !!},
+                  teachers:{!! json_encode($vueOptions['teacher']['options']) !!},
+                  courses: studentCourses
                 },
                 methods: {
                     addCourse: function () {
-                        var newCourse = new courseInfo();
-                        this.courses.push(newCourse);
+                        this.courses.push(new courseInfo());
                     }
                 }
             });
-            getPlaceholder("{{empty($sex['selected'])}}", '#sex', "--请选择性别--");
-            getPlaceholder("{{empty($grade['selected'])}}", '#grade', "--请选择年级--");
 
             @if(!\Entrust::can('student.enter') || !empty($_GET['preview']))
               $('.nav-tabs-custom input').attr('readonly', true);
@@ -80,7 +83,7 @@
 @endsection
 
 @section('content')
-    <form method="post" action="{{$controlUrl}}/update">
+    <form method="post" action="/student/update">
         {{ csrf_field() }}
         <input type="hidden" name="id" value="{{!empty($student['id']) ? $student['id'] : ''}}">
         <input type="hidden" name="type_name"
@@ -117,7 +120,7 @@
                             <div class="col-xs-12 col-md-6 col-lg-4">
                                 <label for="age">年龄</label>
                                 <input id="age" name="age" type="text" class="form-control" placeholder="年龄"
-                                       value="{{!empty($student['age']) ? $student['age'] : ''}}">
+                                       value="{{!empty($student['baseInfos']['age']) ? $student['baseInfos']['age'] : ''}}">
                             </div>
                         </div>
                         <div class="input-group" style="width:100%; margin-bottom:20px;" id="grades">
@@ -133,14 +136,14 @@
                             <div class="col-xs-12 col-md-6 col-lg-4">
                                 <label for="school">学校</label>
                                 <input id="school" name="school" type="text" class="form-control" placeholder="学校"
-                                       value="{{!empty($student['school']) ? $student['school'] : ''}}">
+                                       value="{{!empty($student['baseInfos']['school']) ? $student['baseInfos']['school'] : ''}}">
                             </div>
                         </div>
                         <div class="input-group" style="width:100%; margin-bottom:20px;">
                             <div class="col-xs-12 col-md-6 col-lg-4">
                                 <label for="address">联系地址</label>
                                 <input id="address" name="address" type="text" class="form-control" placeholder="联系地址"
-                                       value="{{!empty($student['address']) ? $student['address'] : ''}}">
+                                       value="{{!empty($student['baseInfos']['address']) ? $student['baseInfos']['address'] : ''}}">
                             </div>
                         </div>
                         <div class="input-group" style="width:100%; margin-bottom:20px;">
@@ -154,7 +157,7 @@
                             <div class="col-xs-12 col-md-6 col-lg-4">
                                 <label for="mark">备注</label>
                                 <input id="mark" name="mark" type="text" class="form-control" placeholder="备注"
-                                       value="{{!empty($student['mark']) ? $student['mark'] : ''}}">
+                                       value="{{!empty($student['baseInfos']['mark']) ? $student['baseInfos']['mark'] : ''}}">
                             </div>
                         </div>
                     </div>
@@ -190,29 +193,29 @@
                   <div class="box-body">
                     <div class="form-group">
                       <div class="row" id="course">
-                        <div v-for="eachCourse in courses">
+                        <div v-for="course in courses">
                           <div class="col-lg-3 col-md-3 col-sm-12">
                             <label>科目</label>
-                            <select class="courseId form-control" name="courseId[]" v-model="eachCourse.course.selected">
-                              <option v-for="option in eachCourse.course.options" v-bind:value="option.value"> <% option.text %>
+                            <select class="subjectId form-control" name="subjects[]" v-model="course.subject">
+                              <option v-for="option in subjects" v-bind:value="option.value"> <% option.text %>
                               </option>
                             </select>
                           </div>
                             <div class="col-lg-3 col-md-3 col-sm-12">
                                 <label>老师</label>
-                                <select class="teacher form-control" name="teacher[]" v-model="eachCourse.teacher.selected">
-                                    <option v-for="option in eachCourse.teacher.options" v-bind:value="option.value"> <% option.text %>
+                                <select class="teacher form-control" name="teachers[]" v-model="course.teacher">
+                                    <option v-for="option in teachers" v-bind:value="option.value"> <% option.text %>
                                     </option>
                                 </select>
                             </div>
                           <div class="col-lg-3 col-md-3 col-sm-12">
                             <label>总课时</label>
-                            <input type="text" class="form-control" placeholder="课时" name="period[]" style="margin-bottom:10px;" v-model="eachCourse.period">
-                            <input type="text" class="form-control" name="cIds[]" v-model="eachCourse.id" style="display: none;">
+                            <input type="text" class="form-control" placeholder="课时" name="periods[]" style="margin-bottom:10px;" v-model="course.period">
+                            <input type="text" class="form-control" name="cIds[]" v-model="course.id" style="display: none;">
                           </div>
                           <div class="col-lg-3 col-md-3 col-sm-12">
                             <label>剩余课时</label>
-                            <input type="text" class="form-control" placeholder="剩余课时" name="restPeriod[]" style="margin-bottom:10px;" v-model="eachCourse.restPeriod" readonly>
+                            <input type="text" class="form-control" placeholder="剩余课时" style="margin-bottom:10px;" v-model="course.periodLeft" readonly>
                           </div>
                         </div>
                         <div class="col-lg-6">

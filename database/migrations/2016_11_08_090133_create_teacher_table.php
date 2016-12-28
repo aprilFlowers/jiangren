@@ -18,6 +18,7 @@ class CreateTeacherTable extends Migration
             $table->string('name');
             $table->string('sex');
             $table->string('phoneNum');
+            $table->tinyInteger('status')->default(1)->index();
             $table->timestamps();
         });
     }

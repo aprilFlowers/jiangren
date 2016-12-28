@@ -21,7 +21,7 @@
 @section('content')
   <div class="box">
     <div class="box-body">
-      <button type="submit" class="btn btn-info pull-right" onClick="location.href='{{$controlUrl}}/edit'">新建</button>
+      <button type="submit" class="btn btn-info pull-right" onClick="location.href='/course/subject/edit'">新建</button>
     </div>
   </div>
   <div class="box">
@@ -37,15 +37,15 @@
           </tr>
         </thead>
         <tbody>
-          @if(!empty($allSubject))
-            @foreach ($allSubject as $subject)
+          @if(!empty($subjects))
+            @foreach ($subjects as $subject)
               <tr>
-                <td><a href="{{$controlUrl}}/edit?id={{$subject['id']}}">{{$subject['id']}}</a></td>
+                <td><a href="/course/subject/edit?id={{$subject['id']}}">{{$subject['id']}}</a></td>
                 <td>{{$subject['name']}}</td>
                 <td><input disabled style="background: #{{$subject['color']}}"></input></td>
                 <td>
-                  <a class="btn btn-info" href="{{$controlUrl}}/edit?id={{$subject['id']}}">修改</a>
-                  <a class="btn btn-warning" href="{{$controlUrl}}/delete?id={{$subject['id']}}" onclick="return confirm('确认删除！')">删除</a>
+                  <a class="btn btn-info" href="/course/subject/edit?id={{$subject['id']}}">修改</a>
+                  <a class="btn btn-warning" href="/course/subject/delete?id={{$subject['id']}}" onclick="return confirm('确认删除！')">删除</a>
                 </td>
               </tr>
             @endforeach

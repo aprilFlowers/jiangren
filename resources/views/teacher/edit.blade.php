@@ -9,19 +9,18 @@
                 el: '#sexs',
                 delimiters: ['<%','%>'],
                 data: {
-                    selected: "{{!empty($sex['selected']) ? $sex['selected'] : null }}",
-                    options:{!! json_encode($sex['options']) !!}
+                    selected: "{{!empty($teacher['sex']) ? $teacher['sex'] : 1 }}",
+                    options:{!! json_encode(array_replace($vueOptions['sex']['options'])) !!}
                 }
             });
-
-            getPlaceholder("{{empty($sex['selected'])}}", '#sex', "--请选择性别--");
+            //sex.options.unshift({'value':-1, 'text':'无性别'});
         })
     </script>
 @endsection
 
 @section('content')
     <div class="box box-primary">
-        <form method="post" action="{{$controlUrl}}/update">
+        <form method="post" action="/teacher/update">
             {{ csrf_field() }}
             <input type="hidden" name="id" value="{{!empty($teacher['id']) ? $teacher['id'] : ''}}">
             <input type="hidden" name="type_name" value="{{!empty($globalBreadcrumb) ? $globalBreadcrumb[count($globalBreadcrumb)-1]['name'] : ''}}">

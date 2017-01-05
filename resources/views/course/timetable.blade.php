@@ -76,6 +76,7 @@
                 },
                 onDrop:function(e,source){
                     $(this).removeClass('over');
+                    var _self = this;
                     if ($(source).hasClass('assigned')){
                         //update
                         $.ajax({
@@ -108,9 +109,7 @@
                             success : function(data) {
                               alert(data.errorMsg);
                               if (data.errorCode == 0) {
-                                console.log($(this));
-                                console.log(c);
-                                $(this).append(c);
+                                $(_self).append(c);
                                 c.attr('id', data.data.id);
                               }
                             }

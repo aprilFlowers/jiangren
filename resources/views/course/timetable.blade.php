@@ -1,8 +1,9 @@
 @extends('layouts.app')
 
 @section('js')
-    <!-- jQuery UI 1.11.4 -->
+    <!-- jQuery EasyUI 1.5 -->
     <script src="/public/default/js/jquery.easyui.min.js"></script>
+    {{--<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script>--}}
     <script src="/public/default/js/vue.js"></script>
     <script src="/public/default/js/common/selectPlaceholder.js"></script>
     <script src="/public/default/js/My97DatePicker/WdatePicker.js"></script>
@@ -38,6 +39,7 @@
                 proxy:'clone',
                 disabled : {{$admin == 'admin' ? 'false' : 'true'}},
             });
+
             $('.item').droppable({
                 accept:'.assigned',
                 onDragEnter:function(e,source){
@@ -66,7 +68,7 @@
                 }
             });
             $('.right td.drop').droppable({
-//                accept:'.assigned',
+                accept:'.item',
                 onDragEnter:function(){
                     //enter table
                     $(this).addClass('over');
@@ -190,7 +192,7 @@
                 <!-- right timetable -->
                 <div class="col-md-9">
                     <div class="right box box-solid">
-                    <div class="box-body no-padding">
+                    <div class="box-body no-padding" id="sortable">
                             <h2 style="text-align: center;">{{$time}}</h2>
                             <table class="timetable" cellspacing="0" width="100%" style="text-align:center; word-break:break-all; word-wrap:break-word;">
                                 <thead>

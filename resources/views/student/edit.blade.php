@@ -52,7 +52,7 @@
                     }
                 }
             });
-            var studentCourses = {!! !empty($student) ? json_encode($student['courses']) : "[]" !!};
+            var studentCourses = {!! json_encode($student['courses']) !!};
             if (studentCourses.length == 0) {
               studentCourses.push(new courseInfo());
             }

@@ -34,12 +34,22 @@ class StudentController extends Controller
         $this->initVueOptions($request, $params);
         $this->initSubjectOptions($request, $params);
         $this->initTeacherOptions($request, $params);
-//dd($params);
+
         if($id = $request->input('id')){
             $student = $this->studentService->getInfoById($id);
-            $params['student'] = $student;
+            $params['student'] = $student->toArray();
             if (!empty($student['id'])) {
-                $params['student']['courses'] = $this->courseService->getInfoByQuery(['student' => $student['id']]);
+                $allCourseInfo = $this->courseService->getInfoByQuery(['student' => $student['id']]);
+                $params['student']['courses'] = [];
+                if($allCourseInfo) {
+                    $keys = ['id', 'teacher', 'subject', 'period', 'periodLeft'];
+                    foreach ($allCourseInfo as $course) {
+                        foreach ($keys as $key) {
+                            $courseInfo[$key] = $course[$key];
+                        }
+                        $params['student']['courses'][] = $courseInfo;
+                    }
+                }
             }
         }
         return view('student.edit', $params);

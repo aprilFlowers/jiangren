@@ -59,21 +59,21 @@ class CourseService extends BaseService {
             $subjects = $this->getSubjects();
         }
         if (!empty($subjects[$obj['subject']])) {
-            $obj['subjectInfo'] = $subjects[$obj['subject']];
+            $obj['subjectInfo'] = $subjects[$obj['subject']]->toArray();
         }
         // reuse teachers
         if (is_null($teachers)) {
             $teachers = $this->getTeachers();
         }
         if (!empty($teachers[$obj['teacher']])) {
-            $obj['teacherInfo'] = $teachers[$obj['teacher']];
+            $obj['teacherInfo'] = $teachers[$obj['teacher']]->toArray();
         }
         // reuse students
         if (is_null($students)) {
             $students = $this->getStudents();
         }
         if (!empty($students[$obj['student']])) {
-            $obj['studentInfo'] = $students[$obj['student']];
+            $obj['studentInfo'] = $students[$obj['student']]->toArray();
         }
         // course left
         $confirmed = $this->getCourseConfirmed($obj['id']);
@@ -111,7 +111,7 @@ class CourseService extends BaseService {
         $output = [];
         foreach ($list as $obj) {
             if (!empty($obj['subjectInfo']) && !empty($obj['teacherInfo']) && !empty($obj['studentInfo'])) {
-                $output[$obj['id']] = $obj;
+                $output[$obj['id']] = $obj->toArray();
             }
         }
         $list = $output;

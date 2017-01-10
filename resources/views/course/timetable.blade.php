@@ -3,7 +3,6 @@
 @section('js')
     <!-- jQuery EasyUI 1.5 -->
     <script src="/public/default/js/jquery.easyui.min.js"></script>
-    {{--<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script>--}}
     <script src="/public/default/js/vue.js"></script>
     <script src="/public/default/js/common/selectPlaceholder.js"></script>
     <script src="/public/default/js/My97DatePicker/WdatePicker.js"></script>
@@ -61,7 +60,6 @@
                                 if (data.errorCode == 0) {
                                   $(source).remove();
                                 }
-                                //window.location = '/course/timetable';
                             }
                         });
                     }
@@ -95,7 +93,6 @@
                                     $(_self).append(source);
                                 }
                                 alert(data.errorMsg);
-                                //window.location = '/course/timetable';
                             }
                         });
                     } else {

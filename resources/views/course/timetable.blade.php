@@ -40,7 +40,7 @@
                 disabled : {{$admin == 'admin' ? 'false' : 'true'}},
             });
 
-            $('.item').droppable({
+            $('.left').droppable({
                 accept:'.assigned',
                 onDragEnter:function(e,source){
                     $(source).addClass('trash');
@@ -67,6 +67,7 @@
                     }
                 }
             });
+
             $('.right td.drop').droppable({
                 accept:'.item',
                 onDragEnter:function(){
@@ -101,8 +102,7 @@
                         //add
                         var c = $(source).clone().addClass('assigned');
                         c.draggable({
-                            revert:true,
-                            proxy:'clone'
+                            revert:true
                         });
                         // save event data
                         $.ajax({
@@ -166,7 +166,7 @@
       <div class="box-body" style="min-height: 700px">
         <div class="row">
                 <!-- course list -->
-                <div class="col-md-3">
+                <div class="col-md-3 left">
                     <div class="box box-solid">
                         <div class="box-header with-border">
                           <h4 class="box-title">课程列表</h4>

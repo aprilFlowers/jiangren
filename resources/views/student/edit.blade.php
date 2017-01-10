@@ -52,7 +52,6 @@
                     }
                 }
             });
-            console.log({!! json_encode($student['courses']) !!});
             var studentCourses = {!! !empty($student) ? json_encode($student['courses']) : "[]" !!};
             if (studentCourses.length == 0) {
               studentCourses.push(new courseInfo());
@@ -68,6 +67,21 @@
                 methods: {
                     addCourse: function () {
                         this.courses.push(new courseInfo());
+                    },
+                    deleteCourse : function (index) {
+                        console.log(this.courses[index].id);
+                        if(confirm('确认删除！')) {
+                            $.ajax({
+                                url : '/student/deleteCourse',
+                                dataType : 'json',
+                                data :{
+                                    cId : this.courses[index].id
+                                },
+                                success : function(data) {
+                                    alert(data.errorMsg);
+                                }
+                            });
+                        }
                     }
                 }
             });
@@ -193,7 +207,7 @@
                   <div class="box-body">
                     <div class="form-group">
                       <div class="row" id="course">
-                        <div v-for="course in courses">
+                        <div v-for="(course, index) in courses">
                           <div class="col-lg-3 col-md-3 col-sm-12">
                             <label>科目</label>
                             <select class="subjectId form-control" name="subjects[]" v-model="course.subject">
@@ -208,15 +222,19 @@
                                     </option>
                                 </select>
                             </div>
-                          <div class="col-lg-3 col-md-3 col-sm-12">
+                          <div class="col-lg-2 col-md-2 col-sm-12">
                             <label>总课时</label>
                             <input type="text" class="form-control" placeholder="课时" name="periods[]" style="margin-bottom:10px;" v-model="course.period">
                             <input type="text" class="form-control" name="cIds[]" v-model="course.id" style="display: none;">
                           </div>
-                          <div class="col-lg-3 col-md-3 col-sm-12">
+                          <div class="col-lg-2 col-md-2 col-sm-12">
                             <label>剩余课时</label>
                             <input type="text" class="form-control" placeholder="剩余课时" style="margin-bottom:10px;" v-model="course.periodLeft" readonly>
                           </div>
+                            <div class="col-lg-1 col-md-1 col-sm-12">
+                                <label>操作</label>
+                                <button type="button" class="form-control btn btn-danger" v-on:click="deleteCourse(index)">删除</button>
+                            </div>
                         </div>
                         <div class="col-lg-6">
                           <button type="button" class="btn btn-info" id="addCourse" v-on:click="addCourse">添加</button>

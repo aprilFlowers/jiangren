@@ -46,6 +46,7 @@ Route::post('/student/index', 'StudentController@index');
 Route::get('/student/index/edit', 'StudentController@edit');
 Route::post('/student/update', 'StudentController@update');
 Route::get('/student/index/delete', 'StudentController@delete');
+Route::get('/student/deleteCourse', 'StudentController@deleteCourse');
 
 //course
 Route::get('/course/subject', 'CourseController@subject');

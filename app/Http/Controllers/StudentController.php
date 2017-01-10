@@ -99,6 +99,13 @@ class StudentController extends Controller
         return redirect("/student/index");
     }
 
+    public function deleteCourse(Request $request) {
+        $cId = $request->input('cId');
+        $res = $this->courseService->deleteOne($cId);
+        $msg['errorMsg'] = $res ? '操作成功！' : '操作失败！';
+        echo json_encode($msg);
+    }
+
     public function query(Request $request) {
         $params = [];
         $params['controlUrl'] = '/student/query';
@@ -110,7 +117,6 @@ class StudentController extends Controller
 
         if($request['_token']) {
             $students = [];
-            $stu = new StudentService();
             $stuInfos = $this->studentService->getStudentsInfos($name, $grade, $phoneNum);
             foreach ($stuInfos as $stuInfo) {
                 // baseInfos

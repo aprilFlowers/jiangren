@@ -36,7 +36,7 @@
             $('.item').draggable({
                 revert:true,
                 proxy:'clone',
-                disabled : {{$admin == 'admin' ? 'false' : 'true'}}
+                disabled : {{$admin == 'admin' ? 'false' : 'true'}},
             });
             $('.item').droppable({
                 accept:'.assigned',
@@ -52,7 +52,7 @@
                             url : '/course/markTimetable/deleteData',
                             dataType : 'json',
                             data :{
-                                id : $(source).attr('id')
+                                id : $(source).attr('data-index')
                             },
                             success : function(data) {
                                 alert(data.errorMsg);
@@ -66,6 +66,7 @@
                 }
             });
             $('.right td.drop').droppable({
+//                accept:'.assigned',
                 onDragEnter:function(){
                     //enter table
                     $(this).addClass('over');
@@ -83,11 +84,13 @@
                             url : '/course/markTimetable/saveData',
                             dataType : 'json',
                             data :{
-                                id : $(source).attr('id'),
-                                index : $(this).attr('id'),
+                                id : $(source).attr('data-index'),
+                                index : $(this).attr('data-index'),
                             },
                             success : function(data) {
-                              $(this).append(source);
+                                if (data.errorCode == 0) {
+                                    $(_self).append(source);
+                                }
                                 alert(data.errorMsg);
                                 //window.location = '/course/timetable';
                             }
@@ -96,21 +99,24 @@
                         //add
                         var c = $(source).clone().addClass('assigned');
                         c.draggable({
-                            revert:true
+                            revert:true,
+                            proxy:'clone'
                         });
                         // save event data
                         $.ajax({
                             url : '/course/markTimetable/saveData',
                             dataType : 'json',
                             data :{
-                                courseId : $(source).attr('id'),
-                                index : $(this).attr('id'),
+                                courseId : $(source).attr('data-index'),
+                                index : $(this).attr('data-index'),
+                                weekStart : '{{$weekStart}}',
+                                weekEnd : '{{$weekEnd}}',
                             },
                             success : function(data) {
                               alert(data.errorMsg);
                               if (data.errorCode == 0) {
+                                  c.attr('data-index', data.data.id);
                                 $(_self).append(c);
-                                c.attr('id', data.data.id);
                               }
                             }
                         });
@@ -167,7 +173,7 @@
                             <!-- the events -->
                             <div id="external-events" style="max-height:500px; overflow:auto;">
                               @foreach($courses as $course)
-                                <div class="item" id="{{$course['id']}}" style="background: #{{$course['subjectInfo']['color']}}">{{$course['subjectInfo']['name']}} | {{$course['teacherInfo']['name']}} | {{$course['studentInfo']['name']}}</div>
+                                <div class="item" data-index="{{$course['id']}}" style="background: #{{$course['subjectInfo']['color']}}">{{$course['subjectInfo']['name']}} | {{$course['teacherInfo']['name']}} | {{$course['studentInfo']['name']}}</div>
                               @endforeach
 
                             </div>
@@ -203,10 +209,10 @@
                                     <tr>
                                         <td class="time">{{$lesson['name']}}</td>
                                         @foreach($lesson['id'] as $id)
-                                        <td class="drop" id="{{$id}}" height="50px">
+                                        <td class="drop" data-index="{{$id}}" height="50px">
                                           @foreach ($table as $t)
                                           @if ($id == $t['index'])
-                                            <div class="item assigned" id="{{$t['id']}}" style="background: #{{$t['status'] == 2 ? 'ddd' : $t['courseInfo']['subjectInfo']['color']}}">{{$t['courseInfo']['subjectInfo']['name']}} | {{$t['courseInfo']['teacherInfo']['name']}} | {{$t['courseInfo']['studentInfo']['name']}}</div>
+                                            <div class="item assigned" data-index="{{$t['id']}}" style="background: #{{$t['status'] == 2 ? 'ddd' : $t['courseInfo']['subjectInfo']['color']}}">{{$t['courseInfo']['subjectInfo']['name']}} | {{$t['courseInfo']['teacherInfo']['name']}} | {{$t['courseInfo']['studentInfo']['name']}}</div>
                                           @endif
                                           @endforeach
                                         </td>

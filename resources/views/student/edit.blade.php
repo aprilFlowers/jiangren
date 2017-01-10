@@ -48,15 +48,14 @@
                 },
                 methods: {
                     addParent: function () {
-                        var newParent = new parentInfo();
-                        this.parents.push(newParent);
+                        this.parents.push(new parentInfo());
                     }
                 }
             });
             var studentCourses = {!! !empty($student) ? json_encode($student['courses']) : "[]" !!};
-            if (studentCourses.length == 0) {
-              studentCourses.push(new courseInfo());
-            }
+//            if (studentCourses.length == 0) {
+//              studentCourses.push(new courseInfo());
+//            }
             var courses = new Vue({
                 el: '#courses',
                 delimiters: ['<%', '%>'],

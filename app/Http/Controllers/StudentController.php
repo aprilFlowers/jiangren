@@ -15,6 +15,7 @@ class StudentController extends Controller
         $this->studentService = new StudentService();
         $this->courseService = new CourseService();
         $this->subjectService = new SubjectService();
+        $this->teacherService = new TeacherService();
     }
 
     public function index(Request $request) {
@@ -33,7 +34,7 @@ class StudentController extends Controller
         $this->initVueOptions($request, $params);
         $this->initSubjectOptions($request, $params);
         $this->initTeacherOptions($request, $params);
-
+//dd($params);
         if($id = $request->input('id')){
             $student = $this->studentService->getInfoById($id);
             $params['student'] = $student;
@@ -100,7 +101,7 @@ class StudentController extends Controller
         if($request['_token']) {
             $students = [];
             $stu = new StudentService();
-            $stuInfos = $stu->getStudentsInfos($name, $grade, $phoneNum);
+            $stuInfos = $this->studentService->getStudentsInfos($name, $grade, $phoneNum);
             foreach ($stuInfos as $stuInfo) {
                 // baseInfos
                 $keys = ['name', 'grade', 'phoneNum'];
@@ -122,12 +123,11 @@ class StudentController extends Controller
 
                 // course
                 $courses = [];
-                $cour = new CourseService();
                 if(!empty($stuInfo['courseInfos'])) {
                     $courseInfos = json_decode($stuInfo['courseInfos'], true);
                     foreach ($courseInfos as $c => $p) {
                         $course['currentPeriod'] = $p;
-                        $courseInfo = $cour->getInfoById($c);
+                        $courseInfo = $this->courseService->getInfoById($c);
                         $course['period'] = $courseInfo['period'];
                         $course['courseId'] = $courseInfo['name'];
                         $courses[] = $course;
@@ -144,13 +144,11 @@ class StudentController extends Controller
 
     protected function initSearchBar($request, &$params) {
         $params['sex']['selected'] = '';
-        $params['sex']['options']  = [];
         $sexConf = config('language.sex');
         foreach($sexConf as $_sk => $sex){
             $params['sex']['options'][] = ['value' => $_sk, 'text' => $sex];
         }
         $params['grade']['selected'] = '-1';
-        $params['grade']['options']  = [];
         $params['grade']['options'][] = ['value' => -1, 'text' => '全部年级'];
         foreach(config("language.grade", []) as $_gk => $grade){
             $params['grade']['options'][] = ['value' => $_gk, 'text' => $grade];
@@ -178,12 +176,10 @@ class StudentController extends Controller
     }
 
     protected function getCourseInfoOpts(&$params, $courseSel = '', $teacherSel = '', $period = '', $id = '', $restPeriod = '') {
-        $sub = new SubjectService();
-        $tea = new TeacherService();
         $courseInfos['course']['selected'] = $courseSel;
         $courseInfos['teacher']['selected'] = $teacherSel;
-        $courseConf = $sub->getSubject();
-        $teacherConf = $tea->getTeachers();
+        $courseConf = $this->subjectService->getSubject();
+        $teacherConf = $this->teacherService->getTeachers();
         foreach($courseConf as $course){
             $courseInfos['course']['options'][] = ['value' => $course['id'], 'text' => $course['name']];
         }

@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\StudentService;
 use App\Models\SubjectService;
 use App\Models\CourseService;
+use App\Models\TeacherService;
 use App\Models\TimetableService;
 use Illuminate\Http\Request;
 
@@ -14,6 +16,8 @@ class CourseController extends Controller
         $this->subjectService = new SubjectService();
         $this->courseService = new CourseService();
         $this->timetableService = new TimetableService();
+        $this->studentService = new StudentService();
+        $this->teacherService = new TeacherService();
     }
 
     public function subject(Request $request) {
@@ -89,8 +93,7 @@ class CourseController extends Controller
         $this->initVueOptions($request, $params);
 
         if($id){
-            $course = new CourseService();
-            $courseInfos = $course->getInfoById($id);
+            $courseInfos = $this->courseService->getInfoById($id);
             $keys = ['teacher', 'student', 'subject'];
             foreach ($keys as $key){
                 $params[$key]['selected'] = $courseInfos[$key];
@@ -106,11 +109,9 @@ class CourseController extends Controller
 
     public function delete(Request $request) {
         $id=$request->input('id', '');
-        $couService = new CourseService();
-        $hisCourseData = $couService->getInfoById($id);
-        $res = $couService->deleteOne($id);
-        $stuService = new StudentService();
-        $stuInfos = $stuService->getInfoById($hisCourseData['student']);
+        $hisCourseData = $this->courseService->getInfoById($id);
+        $res = $this->courseService->deleteOne($id);
+        $stuInfos = $this->studentService->getInfoById($hisCourseData['student']);
         $courseInfos = json_decode($stuInfos['courseInfos'], true);
 
         $_data = [];
@@ -122,7 +123,7 @@ class CourseController extends Controller
             }
         }
         $coursesData['courseInfos'] = json_encode($_data);
-        $r = $stuService->updateOne($hisCourseData['student'], $coursesData);
+        $r = $this->studentService->updateOne($hisCourseData['student'], $coursesData);
         $dir = "/course/index";
         return redirect($dir);
     }
@@ -180,16 +181,19 @@ class CourseController extends Controller
         $params['table'] = $table;
         // others
         $params['time'] = $weekStart.'  --  '.$weekEnd;
+        $params['weekStart'] = $weekStart;
+        $params['weekEnd'] = $weekEnd;
         $params['lessons'] = config('language.study.lesson', []);
         $params['admin'] = \Entrust::hasRole(['admin']) ? 'admin' : '';
         return view('course.timetable', $params);
     }
 
     public function saveTimetableData(Request $request) {
-        $msg = [];
         $id = $request->input('id');
         $index = $request->input('index');
         $courseId = $request->input('courseId');
+        $weekStart = $request->input('weekStart');
+        $weekEnd = $request->input('weekEnd');
 
         $msg = [ 'errorCode' => 1, 'errorMsg' => '操作失败！' ];
 
@@ -217,8 +221,11 @@ class CourseController extends Controller
 
         $table = $this->timetableService->getInfoByQuery([
             'course' => $course['id'],
+            'start' => ['>=', $weekStart],
+            'end' => ['<=', $weekEnd.' 23:59:59'],
             'index' => $index,
         ]);
+
         if (!empty($table) && count($table) > 0) {
             $msg['errorMsg'] = '该课程已添加，不需要重复添加';
             return json_encode($msg);
@@ -256,11 +263,9 @@ class CourseController extends Controller
     }
 
     public function deleteTimetableData(Request $request) {
-        $msg = [];
         $id = $request->input('id');
 
-        $timetable = new TimetableService();
-        $res = $timetable->deleteOne($id);
+        $res = $this->timetableService->deleteOne($id);
 
         $msg = [ 'errorCode' => 1, 'errorMsg' => '操作失败！' ];
         if ($res) {
@@ -306,30 +311,26 @@ class CourseController extends Controller
     }
 
     protected function showWords(&$course) {
-        $cou = new CourseService();
-        $stu = new StudentService();
-        $tea = new TeacherService();
-        $sub = new SubjectService();
         if(!empty($course['student'])) {
-            $studentName = $stu->getNameById($course['student']);
+            $studentName = $this->studentService->getNameById($course['student']);
             if (!empty($studentName)) {
                 $course['studentName'] = $studentName[0];
             }
         }
         if(!empty($course['teacher'])) {
-            $teacherName = $tea->getNameById($course['teacher']);
+            $teacherName = $this->teacherService->getNameById($course['teacher']);
             if (!empty($teacherName)) {
                 $course['teacherName'] = $teacherName[0];
             }
         }
         if(!empty($course['course'])) {
-            $subject = $cou->getSubjectById($course['course']);
+            $subject = $this->courseService->getSubjectById($course['course']);
             if(!empty($subject)) {
-                $courseName = $sub->getNameById($subject[0]);
+                $courseName = $this->subjectService->getNameById($subject[0]);
             }
         }
         if(!empty($course['subject'])) {
-            $courseObj = $sub->getInfoById($course['subject']);
+            $courseObj = $this->subjectService->getInfoById($course['subject']);
             if (!empty($courseObj)) {
                 $courseName = $courseObj->name;
                 $courseColor = $courseObj->color;
@@ -345,30 +346,23 @@ class CourseController extends Controller
 
     protected function initSearchBar($request, &$params) {
         $params['subject']['selected'] = '';
-        $params['subject']['options']  = [];
-        $subject = new SubjectService();
-        $allSubject = $subject->getSubject();
+        $allSubject = $this->subjectService->getSubject();
         foreach($allSubject as $k => $subject){
             $params['subject']['options'][] = ['value' => $subject['id'], 'text' => $subject['name']];
         }
         $params['teacher']['selected'] = '-1';
-        $params['teacher']['options']  = [];
         $params['teacher']['options'][] = ['value' => -1, 'text' => '全部老师'];
-        $teacher = new TeacherService();
-        $allTeachers = $teacher->getTeachers();
+        $allTeachers = $this->teacherService->getTeachers();
         foreach($allTeachers as $k => $teacher){
             $params['teacher']['options'][] = ['value' => $teacher['id'], 'text' => $teacher['name']];
         }
         $params['student']['selected'] = '-1';
-        $params['student']['options']  = [];
         $params['student']['options'][] = ['value' => -1, 'text' => '全部学生'];
-        $student = new StudentService();
-        $allStudents = $student->getStudents();
+        $allStudents = $this->studentService->getStudents();
         foreach($allStudents as $k => $student){
             $params['student']['options'][] = ['value' => $student['id'], 'text' => $student['name']];
         }
         $params['section']['selected'] = '';
-        $params['section']['options']  = [];
         $allSections = config('language.section');
         foreach($allSections as $k => $section){
             $params['section']['options'][] = ['value' => $k, 'text' => $section['name']];

@@ -50,8 +50,18 @@ class TeacherController extends Controller
     public function delete(Request $request) {
         if($id = $request->input('id')) {
             // delete teacher
-            $this->teacherService->deleteOne($id);
+            if($this->teacherService->deleteOne($id)) {
+                // delete courses teached by this
+                $res = $this->deleteCourseByTeacher($id);
+            }
         }
         return redirect("/teacher/index");
     }
+
+    protected function deleteCourseByTeacher($teacherId) {
+        $subjectList = $this->courseService->getSubjectByTeacher($teacherId);
+        $res = $this->timetableService->delCourseBySubject($subjectList);
+        return $res;
+    }
+
 }

@@ -50,9 +50,9 @@ class StudentService extends BaseService {
                 if (empty($course['subject'])) break;
                 $course['student'] = $studentId;
                 if (!empty($course['id'])) {
-                    $res += $courseService->updateOne($course['id'], $course);
+                    $res &= $courseService->updateOne($course['id'], $course);
                 } else {
-                    $res += $courseService->createOne($course);
+                    $res &= $courseService->createOne($course);
                 }
             }
         }

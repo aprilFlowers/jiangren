@@ -22,7 +22,7 @@ class CourseController extends Controller
 
     public function subject(Request $request) {
         $params = [];
-        $params['subjects'] = $this->subjectService->getAvailable();
+        $params['subjects'] = $this->subjectService->getInfo();
         return view('course.subject', $params);
     }
 
@@ -59,23 +59,37 @@ class CourseController extends Controller
 
     public function index(Request $request) {
         $params = [];
-        $this->initVueOptions($request, $params);
-        $this->initStudentOptions($request, $params);
-        $this->initTeacherOptions($request, $params);
+        $this->initVueOptions($request, $params, null);
+        $this->initStudentOptions($request, $params, null);
+        $this->initTeacherOptions($request, $params, null);
 
         $courses = $this->courseService->getInfoByQuery([
             'teacher' => $request->input("teacher", ''),
             'student' => $request->input("student", ''),
         ]);
+        $coursesAvailable = $this->filterAvailableCourses($courses);
         $courseIds = [];
         foreach ($courses as $course) {
             $courseIds[] = $course['id'];
+        }
+        $coursesAvailableIds = [];
+        foreach ($coursesAvailable as $course) {
+            $coursesAvailableIds[] = $course['id'];
         }
         $tableInfos = $this->timetableService->getInfoByQuery([
             'course' => ['in', $courseIds],
             'start' => ['>=', $request->input("openTime", '')],
             'end' => ['<=', $request->input("endTime", '')],
-        ]);
+            'status' => ['in', [2]], // confirmed
+        ])->toArray();
+        if (!empty($coursesAvailableIds)) {
+            $tableInfos = array_merge($this->timetableService->getInfoByQuery([
+                'course' => ['in', $coursesAvailableIds],
+                'start' => ['>=', $request->input("openTime", '')],
+                'end' => ['<=', $request->input("endTime", '')],
+                'status' => ['in', [1]], // active
+            ])->toArray(), $tableInfos);
+        }
         foreach ($tableInfos as &$t) {
             if (!empty($courses[$t['course']])) {
                 $t['courseInfo'] = $courses[$t['course']];
@@ -149,6 +163,20 @@ class CourseController extends Controller
         return [$weekStart, $weekEnd];
     }
 
+    protected function filterAvailableCourses($courses) {
+        foreach ($courses as $index => $course) {
+            if ($course['status'] != 1) {
+                unset($courses[$index]); continue;
+            }
+            foreach (['subjectInfo', 'teacherInfo', 'studentInfo'] as $key) {
+                if (empty($course[$key]['status']) || $course[$key]['status'] != 1) {
+                    unset($courses[$index]); break;
+                }
+            }
+        }
+        return $courses;
+    }
+
     public function timetable(Request $request) {
         $params = [];
         $this->initVueOptions($request, $params);
@@ -160,19 +188,32 @@ class CourseController extends Controller
             'teacher' => $request->input("teacher", ''),
             'student' => $request->input("student", ''),
         ]);
-        $params['courses'] = $courses;
+        $coursesAvailable = $this->filterAvailableCourses($courses);
+        $params['courses'] = $coursesAvailable;
         // timetable
         $courseIds = [];
         foreach ($courses as $course) {
             $courseIds[] = $course['id'];
+        }
+        $coursesAvailableIds = [];
+        foreach ($coursesAvailable as $course) {
+            $coursesAvailableIds[] = $course['id'];
         }
         list($weekStart, $weekEnd) = $this->getWeekStartEnd($request->input('openTime'));
         $table = $this->timetableService->getInfoByQuery([
             'course' => ['in', $courseIds],
             'start' => ['>=', $weekStart],
             'end' => ['<=', $weekEnd.' 23:59:59'],
-            'status' => ['in', [1, 2]], // active or confirmed
-        ]);
+            'status' => ['in', [2]], // confirmed
+        ])->toArray();
+        if (!empty($coursesAvailableIds)) {
+            $table = array_merge($this->timetableService->getInfoByQuery([
+                'course' => ['in', $coursesAvailableIds],
+                'start' => ['>=', $weekStart],
+                'end' => ['<=', $weekEnd.' 23:59:59'],
+                'status' => ['in', [1]], // active
+            ])->toArray(), $table);
+        }
         foreach ($table as &$t) {
             if (!empty($courses[$t['course']])) {
                 $t['courseInfo'] = $courses[$t['course']];
@@ -242,7 +283,7 @@ class CourseController extends Controller
         $lessonTime = config("language.study.lesson.$lesson");
         $start = $lessonTime['start'];
         $end = $lessonTime['end'];
-        list($weekStart, $weekEnd) = $this->getWeekStartEnd();
+        //list($weekStart, $weekEnd) = $this->getWeekStartEnd();
         $date = date('Y-m-d', strtotime("$weekEnd -".(7-$weekDay).' days'));
         $data['start'] = $date.' '.$start;
         $data['end'] = $date.' '.$end;
@@ -272,130 +313,5 @@ class CourseController extends Controller
             $msg = [ 'errorCode' => 0, 'errorMsg' => '操作成功' ];
         }
         return json_encode($msg);
-    }
-
-    protected function formatTableData($tableInfos, $courseInfos, &$params) {
-        $params['table'] = [];
-        $params['courseDragable'] = [];
-        if(!empty($courseInfos)) {
-            foreach ($courseInfos as $courseInfo) {
-                $this->showWords($courseInfo);
-                $params['courseDragable'][] = [
-                    'id' => $courseInfo['id'],
-                    'courseName' => $courseInfo['courseName'],
-                    'teacher' => $courseInfo['teacherName'],
-                    'student' => $courseInfo['studentName'],
-                    'color' => $courseInfo['courseColor'],
-                ];
-            }
-        }
-        if(!empty($tableInfos)) {
-            foreach ($tableInfos as $tableInfo) {
-                $this->showWords($tableInfo);
-                $content = $tableInfo['courseName']. ' | ' .$tableInfo['teacherName']. ' | ' .$tableInfo['studentName'];
-
-                $data = [
-                    'id' => $tableInfo['id'],
-                    'status' => $tableInfo['status'],
-                    'content' => $content,
-                    'color' => $tableInfo['courseColor'],
-                ];
-                if(!empty($params['table']) && in_array($tableInfo['index'], array_keys($params['table']))) {
-                    $params['table'][$tableInfo['index']][] = $data;
-                }else {
-                    $index = $tableInfo['index'];
-                    $params['table'][$index][] = $data;
-                }
-            }
-        }
-    }
-
-    protected function showWords(&$course) {
-        if(!empty($course['student'])) {
-            $studentName = $this->studentService->getNameById($course['student']);
-            if (!empty($studentName)) {
-                $course['studentName'] = $studentName[0];
-            }
-        }
-        if(!empty($course['teacher'])) {
-            $teacherName = $this->teacherService->getNameById($course['teacher']);
-            if (!empty($teacherName)) {
-                $course['teacherName'] = $teacherName[0];
-            }
-        }
-        if(!empty($course['course'])) {
-            $subject = $this->courseService->getSubjectById($course['course']);
-            if(!empty($subject)) {
-                $courseName = $this->subjectService->getNameById($subject[0]);
-            }
-        }
-        if(!empty($course['subject'])) {
-            $courseObj = $this->subjectService->getInfoById($course['subject']);
-            if (!empty($courseObj)) {
-                $courseName = $courseObj->name;
-                $courseColor = $courseObj->color;
-            }
-        }
-        if (!empty($courseName)) {
-            $course['courseName'] = $courseName;
-        }
-        if (!empty($courseColor)) {
-            $course['courseColor'] = $courseColor;
-        }
-    }
-
-    protected function initSearchBar($request, &$params) {
-        $params['subject']['selected'] = '';
-        $allSubject = $this->subjectService->getSubject();
-        foreach($allSubject as $k => $subject){
-            $params['subject']['options'][] = ['value' => $subject['id'], 'text' => $subject['name']];
-        }
-        $params['teacher']['selected'] = '-1';
-        $params['teacher']['options'][] = ['value' => -1, 'text' => '全部老师'];
-        $allTeachers = $this->teacherService->getTeachers();
-        foreach($allTeachers as $k => $teacher){
-            $params['teacher']['options'][] = ['value' => $teacher['id'], 'text' => $teacher['name']];
-        }
-        $params['student']['selected'] = '-1';
-        $params['student']['options'][] = ['value' => -1, 'text' => '全部学生'];
-        $allStudents = $this->studentService->getStudents();
-        foreach($allStudents as $k => $student){
-            $params['student']['options'][] = ['value' => $student['id'], 'text' => $student['name']];
-        }
-        $params['section']['selected'] = '';
-        $allSections = config('language.section');
-        foreach($allSections as $k => $section){
-            $params['section']['options'][] = ['value' => $k, 'text' => $section['name']];
-        }
-        $params['sectionList'] = $allSections;
-
-        $params['week']['selected'] = date('Y-m-d');
-        $params['openTime']['selected'] = date('Y-m-d H:i:s', strtotime('-14 day'));
-        $params['endTime']['selected'] = date('Y-m-d H:i:s');
-
-        if($request['_token']){
-            $params['_token'] = $request['_token'];
-            if(!empty($name = $request->input('name'))){
-                $params['name']= $name;
-            }
-            if(!empty($teacher= $request->input('teacher'))){
-                $params['teacher']['selected'] = $teacher;
-            }
-            if(!empty($student= $request->input('student'))){
-                $params['student']['selected'] = $student;
-            }
-            if(!empty($openTime = $request->input('openTime'))){
-                $params['openTime']['selected'] = $openTime;
-            }
-            if(!empty($endTime = $request->input('endTime'))){
-                $params['endTime']['selected'] = $endTime;
-            }
-            if(!empty($section = $request->input('section'))){
-                $params['section']['selected'] = $section;
-            }
-            if(!empty($week = $request->input('week'))){
-                $params['week']['selected'] = $week;
-            }
-        }
     }
 }

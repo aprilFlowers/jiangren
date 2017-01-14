@@ -82,8 +82,12 @@
                 <td>{{$student['phoneNum']}}</td>
                 <td>
                   <a class="btn btn-info" href="/student/index/edit?id={{$student['id']}}&preview=1">查看</a>
+                  @if ($student['status'] == 1)
                   <a class="btn btn-info" href="/student/index/edit?id={{$student['id']}}">修改</a>
                   <a class="btn btn-warning" href="/student/index/delete?id={{$student['id']}}" onclick="return confirm('确认删除！')">删除</a>
+                  @elseif ($student['status'] == 0)
+                  <a class="btn btn-default" href="#" disabled>已删除</a>
+                  @endif
                 </td>
               </tr>
             @endforeach

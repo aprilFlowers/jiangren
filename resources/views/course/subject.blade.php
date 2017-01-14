@@ -44,8 +44,12 @@
                 <td>{{$subject['name']}}</td>
                 <td><input disabled style="background: #{{$subject['color']}}"></input></td>
                 <td>
+                  @if ($subject['status'] == 1)
                   <a class="btn btn-info" href="/course/subject/edit?id={{$subject['id']}}">修改</a>
                   <a class="btn btn-warning" href="/course/subject/delete?id={{$subject['id']}}" onclick="return confirm('确认删除！')">删除</a>
+                  @elseif ($subject['status'] == 0)
+                  <a class="btn btn-default" href="#" disabled>已删除</a>
+                  @endif
                 </td>
               </tr>
             @endforeach

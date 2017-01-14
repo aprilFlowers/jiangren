@@ -33,29 +33,44 @@ trait VueOptionsTrait {
         $params['vueOptions']['endTime']['selected'] = $request->input('endTime', '');
     }
 
-    public function initSubjectOptions($request, &$params) {
+    // get all: status = null
+    public function initSubjectOptions($request, &$params, $status = 1) {
         $params['vueOptions']['subject']['selected'] = $request->input('subject', '');
         $params['vueOptions']['subject']['options']  = [];
         $subjectService = new SubjectService();
-        foreach($subjectService->getAvailable() as $v){
+        $query = [];
+        if (!is_null($status)) {
+            $query['status'] = $status;
+        }
+        foreach($subjectService->getInfoByQuery($query) as $v){
             $params['vueOptions']['subject']['options'][] = ['value' => $v->id, 'text' => $v->name];
         }
     }
 
-    public function initTeacherOptions($request, &$params) {
+    // get all: status = null
+    public function initTeacherOptions($request, &$params, $status = 1) {
         $params['vueOptions']['teacher']['selected'] = $request->input('teacher', '');
         $params['vueOptions']['teacher']['options']  = [];
         $teacherService = new TeacherService();
-        foreach($teacherService->getAvailable() as $v){
+        $query = [];
+        if (!is_null($status)) {
+            $query['status'] = $status;
+        }
+        foreach($teacherService->getInfoByQuery($query) as $v){
             $params['vueOptions']['teacher']['options'][] = ['value' => $v->id, 'text' => $v->name];
         }
     }
 
-    public function initStudentOptions($request, &$params) {
+    // get all: status = null
+    public function initStudentOptions($request, &$params, $status = 1) {
         $params['vueOptions']['student']['selected'] = $request->input('student', '');
         $params['vueOptions']['student']['options']  = [];
         $studentService = new StudentService();
-        foreach($studentService->getAvailable() as $v){
+        $query = [];
+        if (!is_null($status)) {
+            $query['status'] = $status;
+        }
+        foreach($studentService->getInfoByQuery($query) as $v){
             $params['vueOptions']['student']['options'][] = ['value' => $v->id, 'text' => $v->name];
         }
     }

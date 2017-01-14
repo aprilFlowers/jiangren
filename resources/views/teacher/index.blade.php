@@ -52,8 +52,12 @@
                 </td>
                 <td>{{$teacher['phoneNum']}}</td>
                 <td>
+                  @if ($teacher['status'] == 1)
                   <a class="btn btn-info" href="/teacher/index/edit?id={{$teacher['id']}}">修改</a>
                   <a class="btn btn-warning" href="/teacher/index/delete?id={{$teacher['id']}}" onclick="return confirm('确认删除！')">删除</a>
+                  @elseif ($teacher['status'] == 0)
+                  <a class="btn btn-default" href="#" disabled>已删除</a>
+                  @endif
                 </td>
               </tr>
             @endforeach

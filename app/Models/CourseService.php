@@ -10,7 +10,6 @@ use App\Models\TimetableService;
 class CourseService extends BaseService {
     public function __construct(){
         parent::__construct(new Course(), 'jr_cms');
-        $this->course = new Course();
     }
 
     public function getInfo(){
@@ -116,10 +115,5 @@ class CourseService extends BaseService {
         }
         $list = $output;
         return $output;
-    }
-
-    public function getSubjectByTeacher($teacherId) {
-        $courseList = $this->course->where('teacher', $teacherId)->pluck('subject');
-        return array_unique($courseList->toArray());
     }
 }

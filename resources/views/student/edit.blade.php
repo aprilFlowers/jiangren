@@ -69,18 +69,23 @@
                         this.courses.push(new courseInfo());
                     },
                     deleteCourse : function (index) {
-                        console.log(this.courses[index].id);
+                        let _courses = this.courses;
                         if(confirm('确认删除！')) {
+                          if (!('id' in this.courses[index])) {
+                            _courses.splice(index,1);
+                          } else {
                             $.ajax({
-                                url : '/student/deleteCourse',
-                                dataType : 'json',
-                                data :{
-                                    cId : this.courses[index].id
-                                },
-                                success : function(data) {
-                                    alert(data.errorMsg);
-                                }
+                              url : '/student/deleteCourse',
+                              dataType : 'json',
+                              data :{
+                                cId : this.courses[index].id
+                              },
+                              success : function(data) {
+                                alert(data.errorMsg);
+                                _courses.splice(index,1);
+                              }
                             });
+                          }
                         }
                     }
                 }

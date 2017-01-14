@@ -63,6 +63,8 @@
           dataType  : 'json',
           success   : function(data){
             alert(data.errorMsg);
+            $('#confirmBtn_'+cid).removeClass('btn-warning').addClass('btn-default');
+            $('#confirmBtn_'+cid).attr('disabled', true).html('已确认课程');
           }
         });
       }
@@ -139,7 +141,7 @@
                       @if($c['status'] == 2)
                         <button type="button" class="btn btn-default" disabled>已确认课程</button>
                       @elseif($admin == 'admin' && $c['status'] == 1)
-                        <button type="button" class="btn btn-warning" onclick="clickCourse({{$c['id']}}, {{$c['courseInfo']['student']}})">确认课程</button>
+                        <button id="confirmBtn_{{$c['id']}}" type="button" class="btn btn-warning" onclick="clickCourse({{$c['id']}}, {{$c['courseInfo']['student']}})">确认课程</button>
                       @endif
                     </td>
                   </tr>

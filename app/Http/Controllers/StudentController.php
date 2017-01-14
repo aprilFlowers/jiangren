@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\CourseService;
 use App\Models\StudentService;
 use App\Models\SubjectService;
-use App\Models\TeacherService;
 use Illuminate\Http\Request;
 
 class StudentController extends Controller
@@ -15,7 +14,6 @@ class StudentController extends Controller
         $this->studentService = new StudentService();
         $this->courseService = new CourseService();
         $this->subjectService = new SubjectService();
-        $this->teacherService = new TeacherService();
     }
 
     public function index(Request $request) {
@@ -156,57 +154,5 @@ class StudentController extends Controller
         }
 
         return view('student.query', $params);
-    }
-
-    protected function initSearchBar($request, &$params) {
-        $params['sex']['selected'] = '';
-        $sexConf = config('language.sex');
-        foreach($sexConf as $_sk => $sex){
-            $params['sex']['options'][] = ['value' => $_sk, 'text' => $sex];
-        }
-        $params['grade']['selected'] = '-1';
-        $params['grade']['options'][] = ['value' => -1, 'text' => '全部年级'];
-        foreach(config("language.grade", []) as $_gk => $grade){
-            $params['grade']['options'][] = ['value' => $_gk, 'text' => $grade];
-        }
-
-        $familyDefault[] = [
-            'parentName' => '',
-            'contactNum' => '',
-            'workAddress' => '',
-        ];
-        $params['students']['familyDefault'] = json_encode($familyDefault);
-        $this->getCourseInfoOpts($params);
-        if($request['_token']){
-            $params['_token'] = $request['_token'];
-            if(!empty($name = $request->input('name'))){
-                $params['name']= $name;
-            }
-            if(!empty($grade = $request->input('grade'))){
-                $params['grade']['selected'] = $grade;
-            }
-            if(!empty($phoneNum = $request->input('phoneNum'))){
-                $params['phoneNum'] = $phoneNum;
-            }
-        }
-    }
-
-    protected function getCourseInfoOpts(&$params, $courseSel = '', $teacherSel = '', $period = '', $id = '', $restPeriod = '') {
-        $courseInfos['course']['selected'] = $courseSel;
-        $courseInfos['teacher']['selected'] = $teacherSel;
-        $courseConf = $this->subjectService->getSubject();
-        $teacherConf = $this->teacherService->getTeachers();
-        foreach($courseConf as $course){
-            $courseInfos['course']['options'][] = ['value' => $course['id'], 'text' => $course['name']];
-        }
-        foreach($teacherConf as $teacher){
-            $courseInfos['teacher']['options'][] = ['value' => $teacher['id'], 'text' => $teacher['name']];
-        }
-        $courseInfos['period']= $period;
-        $courseInfos['restPeriod'] = $restPeriod;
-        $courseInfos['id'] = $id;
-        $params['courseOpts'] = $courseInfos['course']['options'];
-        $params['teacherOpts'] = $courseInfos['teacher']['options'];
-        $params['student']['courses'][] = $courseInfos;
     }
 }

@@ -38,6 +38,10 @@
                 proxy:'clone',
                 disabled : {{$admin == 'admin' ? 'false' : 'true'}},
             });
+            $('.itemdisabled').draggable({
+                revert:true,
+                disabled : false,
+            });
 
             $('.left').droppable({
                 accept:'.assigned',
@@ -87,6 +91,8 @@
                             data :{
                                 id : $(source).attr('data-index'),
                                 index : $(this).attr('data-index'),
+                                weekStart : '{{$weekStart}}',
+                                weekEnd : '{{$weekEnd}}',
                             },
                             success : function(data) {
                                 if (data.errorCode == 0) {
@@ -211,7 +217,7 @@
                                         <td class="drop" data-index="{{$id}}" height="50px">
                                           @foreach ($table as $t)
                                           @if ($id == $t['index'])
-                                            <div class="item assigned" data-index="{{$t['id']}}" style="background: #{{$t['status'] == 2 ? 'ddd' : $t['courseInfo']['subjectInfo']['color']}}">{{$t['courseInfo']['subjectInfo']['name']}} | {{$t['courseInfo']['teacherInfo']['name']}} | {{$t['courseInfo']['studentInfo']['name']}}</div>
+                                            <div class="{{$t['status'] == 2 ? 'itemdisabled':'item'}} assigned" data-index="{{$t['id']}}" style="background: #{{$t['status'] == 2 ? 'ddd' : $t['courseInfo']['subjectInfo']['color']}}">{{$t['courseInfo']['subjectInfo']['name']}} | {{$t['courseInfo']['teacherInfo']['name']}} | {{$t['courseInfo']['studentInfo']['name']}}{{$t['status'] == 2 ? '（已确认）':''}}</div>
                                           @endif
                                           @endforeach
                                         </td>

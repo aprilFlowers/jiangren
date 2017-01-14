@@ -2,9 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\CourseService;
 use App\Models\TeacherService;
-use App\Models\TimetableService;
 use Illuminate\Http\Request;
 
 class TeacherController extends Controller
@@ -12,13 +10,11 @@ class TeacherController extends Controller
     public function __construct() {
         parent::__construct();
         $this->teacherService = new TeacherService();
-        $this->courseService = new CourseService();
-        $this->timetableService = new TimetableService();
     }
 
     public function index(Request $request) {
         $params = [];
-        $params['teachers'] = $this->teacherService->getAvailable();
+        $params['teachers'] = $this->teacherService->getInfo();
         return view('teacher.index', $params);
     }
 
@@ -36,7 +32,7 @@ class TeacherController extends Controller
         // prepare update data
         $data = [];
         foreach (['name', 'sex', 'phoneNum'] as $key){
-            if ($request->has($key)) $data[$key] = $request->input($key);
+            $data[$key] = $request->input($key);
         }
         // update or create
         if($id = $request->input('id')){
@@ -49,19 +45,10 @@ class TeacherController extends Controller
 
     public function delete(Request $request) {
         if($id = $request->input('id')) {
-            // delete teacher
-            if($this->teacherService->deleteOne($id)) {
-                // delete courses teached by this
-                $res = $this->deleteCourseByTeacher($id);
-            }
+            // disable
+            $this->teacherService->disableOne($id);
         }
         return redirect("/teacher/index");
-    }
-
-    protected function deleteCourseByTeacher($teacherId) {
-        $subjectList = $this->courseService->getSubjectByTeacher($teacherId);
-        $res = $this->timetableService->delCourseBySubject($subjectList);
-        return $res;
     }
 
 }

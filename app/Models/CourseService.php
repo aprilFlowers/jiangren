@@ -117,9 +117,4 @@ class CourseService extends BaseService {
         $list = $output;
         return $output;
     }
-
-    public function getSubjectByTeacher($teacherId) {
-        $courseList = $this->course->where('teacher', $teacherId)->pluck('subject');
-        return array_unique($courseList->toArray());
-    }
 }

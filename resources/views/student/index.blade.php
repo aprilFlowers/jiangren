@@ -51,7 +51,7 @@
               <input type="text" class="form-control" id="phoneNum"  name="phoneNum" placeholder="联系电话" value="{{!empty($phoneNum) ? $phoneNum : ''}}">
             </div>
             <div class="col-xs-12 col-md-6 col-lg-2" style="margin: 5px 0 5px 0;">
-              <button type="button" class="btn btn-success" onClick="location.href='/student/index/edit'">新建</button>
+              @if(\Entrust::can('student.enter'))<button type="button" class="btn btn-success" onClick="location.href='/student/index/edit'">新建</button>@endif
               <button type="submit" class="btn btn-info">查找</button>
             </div>
           </form>
@@ -83,8 +83,8 @@
                 <td>
                   <a class="btn btn-info" href="/student/index/edit?id={{$student['id']}}&preview=1">查看</a>
                   @if ($student['status'] == 1)
-                  <a class="btn btn-info" href="/student/index/edit?id={{$student['id']}}">修改</a>
-                  <a class="btn btn-warning" href="/student/index/delete?id={{$student['id']}}" onclick="return confirm('确认删除！')">删除</a>
+                  @if(\Entrust::can('student.enter'))<a class="btn btn-info" href="/student/index/edit?id={{$student['id']}}">修改</a>@endif
+                  @if(\Entrust::can('student.enter'))<a class="btn btn-warning" href="/student/index/delete?id={{$student['id']}}" onclick="return confirm('确认删除！')">删除</a>@endif
                   @elseif ($student['status'] == 0)
                   <a class="btn btn-default" href="#" disabled>已删除</a>
                   @endif

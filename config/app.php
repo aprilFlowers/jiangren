@@ -241,7 +241,7 @@ return [
             ],
             '学生管理' => ['icon' => 'fa-users', 'perm' => 'student.*',
                 'children' => [
-                    '学生信息' => ['url' => '/student/index', 'icon'=>'fa-edit', 'perm' => 'student.enter'],
+                    '学生信息' => ['url' => '/student/index', 'icon'=>'fa-edit', 'perm' => 'student.*'],
                 ],
             ],
             '课程管理' => ['icon' => 'fa-book', 'perm' => 'course.*',

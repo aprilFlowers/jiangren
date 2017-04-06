@@ -40,7 +40,7 @@
             });
             $('.itemdisabled').draggable({
                 revert:true,
-                disabled : false,
+                disabled : true,
             });
 
             $('.left').droppable({

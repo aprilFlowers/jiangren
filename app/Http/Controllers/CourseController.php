@@ -58,7 +58,12 @@ class CourseController extends Controller
     }
 
     public function index(Request $request) {
-        $params = [];
+        $defaultEndTime = date('Y-m-d H:i:s');
+        $defaultOpenTime = date('Y-m-d H:i:s', strtotime('-2 week'));
+        $params = [
+	    'openTime' => $request->input("openTime", $defaultOpenTime),
+	    'endTime' => $request->input("openTime", $defaultEndTime),
+	];
         $this->initVueOptions($request, $params, null);
         $this->initStudentOptions($request, $params, null);
         $this->initTeacherOptions($request, $params, null);
@@ -85,7 +90,7 @@ class CourseController extends Controller
         if (!empty($coursesAvailableIds)) {
             $tableInfos = array_merge($this->timetableService->getInfoByQuery([
                 'course' => ['in', $coursesAvailableIds],
-                'start' => ['>=', $request->input("openTime", '')],
+                'start' => ['>=', $request->input("openTime", $defaultOpenTime)],
                 'end' => ['<=', $request->input("endTime", '')],
                 'status' => ['in', [1]], // active
             ])->toArray(), $tableInfos);

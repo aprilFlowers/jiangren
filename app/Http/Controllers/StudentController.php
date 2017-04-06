@@ -17,7 +17,10 @@ class StudentController extends Controller
     }
 
     public function index(Request $request) {
-        $params = [];
+        $params = [
+            'name' => $request->input('name', ''),
+            'phoneNum' => $request->input('phoneNum', ''),
+	];
         $this->initVueOptions($request, $params);
         $params['students'] = $this->studentService->getInfoByQuery([
             'name' => $request->input('name', ''),
@@ -29,6 +32,8 @@ class StudentController extends Controller
 
     public function edit(Request $request) {
         $params = [];
+	$params['student'] = [];
+	$params['student']['courses'] = [];
         $this->initVueOptions($request, $params);
         $this->initSubjectOptions($request, $params);
         $this->initTeacherOptions($request, $params);
@@ -38,7 +43,6 @@ class StudentController extends Controller
             $params['student'] = $student->toArray();
             if (!empty($student['id'])) {
                 $allCourseInfo = $this->courseService->getInfoByQuery(['student' => $student['id']]);
-                $params['student']['courses'] = [];
                 if($allCourseInfo) {
                     $keys = ['id', 'teacher', 'subject', 'period', 'periodLeft'];
                     foreach ($allCourseInfo as $course) {
@@ -107,6 +111,7 @@ class StudentController extends Controller
     public function query(Request $request) {
         $params = [];
         $params['controlUrl'] = '/student/query';
+	dd($this);
         $this->initSearchBar($request, $params);
 
         $name = $request->input('name');

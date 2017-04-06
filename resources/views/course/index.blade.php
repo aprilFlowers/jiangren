@@ -27,13 +27,13 @@
       var openTime = new Vue({
         el  : '#openTime',
         data: {
-          openTime: "{{!empty($vueOptions['openTime']['selected']) ? $vueOptions['openTime']['selected'] : ''}}"
+          openTime: "{{!empty($vueOptions['openTime']['selected']) ? $vueOptions['openTime']['selected'] : $openTime}}"
         }
       });
       var endTime = new Vue({
         el  : '#endTime',
         data: {
-          endTime: "{{!empty($vueOptions['endTime']['selected']) ? $vueOptions['endTime']['selected'] : ''}}"
+          endTime: "{{!empty($vueOptions['endTime']['selected']) ? $vueOptions['endTime']['selected'] : $endTime}}"
         }
       });
 
@@ -130,6 +130,7 @@
             <tbody>
               @if(!empty($course))
                 @foreach ($course as $c)
+                  @if(!empty($c['courseInfo']))
                   <tr>
                     <td>{{$c['id']}}</td>
                     <td>{{$c['courseInfo']['subjectInfo']['name']}}</td>
@@ -145,6 +146,7 @@
                       @endif
                     </td>
                   </tr>
+                  @endif
                 @endforeach
               @endif
             </tbody>

@@ -16,6 +16,7 @@ class CreateStudentTable extends Migration
         //
         Schema::create('students', function (Blueprint $table) {
             $table->increments('id');
+            $table->string('userId')->index();
             $table->string('name')->index();
             $table->string('grade')->index();
             $table->string('phoneNum')->index();

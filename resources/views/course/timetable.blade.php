@@ -16,7 +16,9 @@
                     options:{!! json_encode($vueOptions['teacher']['options']) !!}
                 }
             });
-            teacher.options.unshift({'value':'', 'text':'全部教师'});
+            @if(\Entrust::hasRole('admin') || \Entrust::hasRole('student'))
+              teacher.options.unshift({'value':'', 'text':'全部教师'});
+            @endif
             var student = new Vue({
                 el: '#students',
                 delimiters: ['<%','%>'],
@@ -25,7 +27,9 @@
                     options:{!! json_encode($vueOptions['student']['options']) !!}
                 }
             });
-            student.options.unshift({'value':'', 'text':'全部学生'});
+            @if(\Entrust::hasRole('admin') || \Entrust::hasRole('teacher'))
+              student.options.unshift({'value':'', 'text':'全部学生'});
+            @endif
             var openTime = new Vue({
                 el  : '#openTimes',
                 data: {
@@ -216,7 +220,7 @@
                                         @foreach($lesson['id'] as $id)
                                         <td class="drop" data-index="{{$id}}" height="50px">
                                           @foreach ($table as $t)
-                                          @if ($id == $t['index'])
+                                          @if ($id == $t['index'] && !empty($t['courseInfo']))
                                             <div class="{{$t['status'] == 2 ? 'itemdisabled':'item'}} assigned" data-index="{{$t['id']}}" style="background: #{{$t['status'] == 2 ? 'ddd' : $t['courseInfo']['subjectInfo']['color']}}">{{$t['courseInfo']['subjectInfo']['name']}} | {{$t['courseInfo']['teacherInfo']['name']}} | {{$t['courseInfo']['studentInfo']['name']}}{{$t['status'] == 2 ? '（已确认）':''}}</div>
                                           @endif
                                           @endforeach

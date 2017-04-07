@@ -23,6 +23,7 @@
         <form method="post" action="/teacher/update">
             {{ csrf_field() }}
             <input type="hidden" name="id" value="{{!empty($teacher['id']) ? $teacher['id'] : ''}}">
+            <input type="hidden" name="userId" value="{{!empty($teacher['userId']) ? $teacher['userId'] : ''}}">
             <input type="hidden" name="type_name" value="{{!empty($globalBreadcrumb) ? $globalBreadcrumb[count($globalBreadcrumb)-1]['name'] : ''}}">
             <div class="box-body">
                 <!-- body -->
@@ -31,6 +32,12 @@
                         <div class="col-xs-12 col-md-6 col-lg-4">
                             <label for="name">姓名</label>
                             <input id="name" name="name" type="text" class="form-control" placeholder="姓名" value="{{!empty($teacher['name']) ? $teacher['name'] : ''}}">
+                        </div>
+                    </div>
+                    <div class="input-group" style="width:100%; margin-bottom:20px;">
+                        <div class="col-xs-12 col-md-6 col-lg-4">
+                            <label for="name">登录密码</label>
+                            <input id="password" name="password" type="password" class="form-control" placeholder="登录密码" value="{{!empty($teacher['staff']['password']) ? 'password_setted' : ''}}">
                         </div>
                     </div>
                     <div class="input-group" style="width:100%; margin-bottom:20px;" id="sexs">

@@ -61,16 +61,16 @@ class CourseController extends Controller
         $defaultEndTime = date('Y-m-d H:i:s');
         $defaultOpenTime = date('Y-m-d H:i:s', strtotime('-2 week'));
         $params = [
-	    'openTime' => $request->input("openTime", $defaultOpenTime),
-	    'endTime' => $request->input("openTime", $defaultEndTime),
-	];
+            'openTime' => $request->input("openTime", $defaultOpenTime),
+            'endTime' => $request->input("openTime", $defaultEndTime),
+        ];
         $this->initVueOptions($request, $params, null);
         $this->initStudentOptions($request, $params, null);
         $this->initTeacherOptions($request, $params, null);
 
         $courses = $this->courseService->getInfoByQuery([
-            'teacher' => $request->input("teacher", ''),
-            'student' => $request->input("student", ''),
+            'teacher' => $request->input("teacher", $params['vueOptions']['teacher']['selected']),
+            'student' => $request->input("student", $params['vueOptions']['student']['selected']),
         ]);
         $coursesAvailable = $this->filterAvailableCourses($courses);
         $courseIds = [];
@@ -170,7 +170,7 @@ class CourseController extends Controller
 
     protected function filterAvailableCourses($courses) {
         foreach ($courses as $index => $course) {
-            if ($course['status'] != 1) {
+            if ($course['status'] != 1 || empty($course['periodLeft'])) {
                 unset($courses[$index]); continue;
             }
             foreach (['subjectInfo', 'teacherInfo', 'studentInfo'] as $key) {
@@ -190,8 +190,8 @@ class CourseController extends Controller
 
         // courses
         $courses = $this->courseService->getInfoByQuery([
-            'teacher' => $request->input("teacher", ''),
-            'student' => $request->input("student", ''),
+            'teacher' => $request->input("teacher", $params['vueOptions']['teacher']['selected']),
+            'student' => $request->input("student", $params['vueOptions']['student']['selected']),
         ]);
         $coursesAvailable = $this->filterAvailableCourses($courses);
         $params['courses'] = $coursesAvailable;
@@ -230,7 +230,7 @@ class CourseController extends Controller
         $params['weekStart'] = $weekStart;
         $params['weekEnd'] = $weekEnd;
         $params['lessons'] = config('language.study.lesson', []);
-        $params['admin'] = \Entrust::hasRole(['admin']) ? 'admin' : '';
+        $params['admin'] = (\Entrust::hasRole(['admin']) || \Entrust::hasRole('teacher')) ? 'admin' : '';
         return view('course.timetable', $params);
     }
 

@@ -52,7 +52,7 @@
             </div>
             <div class="col-xs-12 col-md-6 col-lg-2" style="margin: 5px 0 5px 0;">
               @if(\Entrust::can('student.enter'))<button type="button" class="btn btn-success" onClick="location.href='/student/index/edit'">新建</button>@endif
-              <button type="submit" class="btn btn-info">查找</button>
+              @if(\Entrust::can('student.query'))<button type="submit" class="btn btn-info">查找</button>@endif
             </div>
           </form>
         </div>
@@ -78,7 +78,7 @@
               <tr>
                 <td><a href="/student/index/edit?id={{$student['id']}}&preview=1">{{$student['id']}}</a></td>
                 <td>{{$student['name']}}</td>
-                <td>{{$student['grade']}}</td>
+                <td>{{$gradeLang[$student['grade']]}}</td>
                 <td>{{$student['phoneNum']}}</td>
                 <td>
                   <a class="btn btn-info" href="/student/index/edit?id={{$student['id']}}&preview=1">查看</a>

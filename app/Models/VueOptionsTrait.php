@@ -5,6 +5,9 @@ use App\Models\SubjectService;
 use App\Models\TeacherService;
 use Illuminate\Database\Eloquent\Model;
 
+use Auth;
+use Entrust;
+
 trait VueOptionsTrait {
     public function initVueOptions($request, &$params) {
         $this->initSex($request, $params);
@@ -48,7 +51,7 @@ trait VueOptionsTrait {
     }
 
     // get all: status = null
-    public function initTeacherOptions($request, &$params, $status = 1) {
+    public function initTeacherOptions($request, &$params, $status = 1, $allOptions = false) {
         $params['vueOptions']['teacher']['selected'] = $request->input('teacher', '');
         $params['vueOptions']['teacher']['options']  = [];
         $teacherService = new TeacherService();
@@ -57,12 +60,17 @@ trait VueOptionsTrait {
             $query['status'] = $status;
         }
         foreach($teacherService->getInfoByQuery($query) as $v){
-            $params['vueOptions']['teacher']['options'][] = ['value' => $v->id, 'text' => $v->name];
+            if ($allOptions || Entrust::hasRole('admin') || Entrust::hasRole('student')) {
+                $params['vueOptions']['teacher']['options'][] = ['value' => $v->id, 'text' => $v->name];
+            } elseif (Entrust::hasRole('teacher') && Auth::user()['id'] == $v->userId) {
+                $params['vueOptions']['teacher']['selected'] = $v->id;
+                $params['vueOptions']['teacher']['options'][] = ['value' => $v->id, 'text' => $v->name];
+            }
         }
     }
 
     // get all: status = null
-    public function initStudentOptions($request, &$params, $status = 1) {
+    public function initStudentOptions($request, &$params, $status = 1, $allOptions = false) {
         $params['vueOptions']['student']['selected'] = $request->input('student', '');
         $params['vueOptions']['student']['options']  = [];
         $studentService = new StudentService();
@@ -71,7 +79,12 @@ trait VueOptionsTrait {
             $query['status'] = $status;
         }
         foreach($studentService->getInfoByQuery($query) as $v){
-            $params['vueOptions']['student']['options'][] = ['value' => $v->id, 'text' => $v->name];
+            if ($allOptions || Entrust::hasRole('admin') || Entrust::hasRole('teacher')) {
+                $params['vueOptions']['student']['options'][] = ['value' => $v->id, 'text' => $v->name];
+            } elseif (Entrust::hasRole('student') && Auth::user()['id'] == $v->userId) {
+                $params['vueOptions']['student']['selected'] = $v->id;
+                $params['vueOptions']['student']['options'][] = ['value' => $v->id, 'text' => $v->name];
+            }
         }
     }
 }

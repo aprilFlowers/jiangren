@@ -14,7 +14,9 @@
           options:{!! json_encode($vueOptions['teacher']['options']) !!}
         }
       });
-      teacher.options.unshift({'value':'', 'text':'全部教师'});
+      @if(\Entrust::hasRole('admin') || \Entrust::hasRole('student'))
+        teacher.options.unshift({'value':'', 'text':'全部教师'});
+      @endif
       var student = new Vue({
         el: '#students',
         delimiters: ['<%','%>'],
@@ -23,7 +25,9 @@
           options:{!! json_encode($vueOptions['student']['options']) !!}
         }
       });
-      student.options.unshift({'value':'', 'text':'全部学生'});
+      @if(\Entrust::hasRole('admin') || \Entrust::hasRole('teacher'))
+        student.options.unshift({'value':'', 'text':'全部学生'});
+      @endif
       var openTime = new Vue({
         el  : '#openTime',
         data: {

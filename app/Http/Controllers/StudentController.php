@@ -5,7 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\CourseService;
 use App\Models\StudentService;
 use App\Models\SubjectService;
+use App\Models\Auth\RoleService;
+use App\Models\Auth\StaffService;
 use Illuminate\Http\Request;
+
+use Auth;
+use Entrust;
 
 class StudentController extends Controller
 {
@@ -14,33 +19,44 @@ class StudentController extends Controller
         $this->studentService = new StudentService();
         $this->courseService = new CourseService();
         $this->subjectService = new SubjectService();
+        $this->roleService = new RoleService();
+        $this->staffService = new StaffService();
     }
 
     public function index(Request $request) {
         $params = [
             'name' => $request->input('name', ''),
             'phoneNum' => $request->input('phoneNum', ''),
-	];
+            'gradeLang' => config('language.study.grade'),
+        ];
         $this->initVueOptions($request, $params);
-        $params['students'] = $this->studentService->getInfoByQuery([
-            'name' => $request->input('name', ''),
-            'grade' => $request->input('grade', ''),
-            'phoneNum' => $request->input('phoneNum', ''),
-        ]);
+        if (Entrust::hasRole('student')) {
+            $params['students'] = $this->studentService->getInfoByQuery([
+                'userId' => Auth::user()->id,
+            ]);
+        } else {
+            $params['students'] = $this->studentService->getInfoByQuery([
+                'name' => $request->input('name', ''),
+                'grade' => $request->input('grade', ''),
+                'phoneNum' => $request->input('phoneNum', ''),
+            ]);
+        }
         return view('student.index', $params);
     }
 
     public function edit(Request $request) {
         $params = [];
-	$params['student'] = [];
-	$params['student']['courses'] = [];
+        $params['student'] = [];
+        $params['student']['courses'] = [];
         $this->initVueOptions($request, $params);
         $this->initSubjectOptions($request, $params);
-        $this->initTeacherOptions($request, $params);
+        $this->initTeacherOptions($request, $params, 1, true);
 
         if($id = $request->input('id')){
-            $student = $this->studentService->getInfoById($id);
-            $params['student'] = $student->toArray();
+            $student = $this->studentService->getInfoById($id)->toArray();
+            $student['staff'] = $this->staffService->getInfoById($student['userId']);
+            $params['student'] = $student;
+            $params['student']['courses'] = [];
             if (!empty($student['id'])) {
                 $allCourseInfo = $this->courseService->getInfoByQuery(['student' => $student['id']]);
                 if($allCourseInfo) {
@@ -58,8 +74,23 @@ class StudentController extends Controller
     }
 
     public function update(Request $request) {
+        $userId = $request->input('userId', '');
+        $password = $request->input('password', '');
+        // create auth user
+        if (empty($userId)) {
+            $params = [
+                'name' => $request->input('name', ''),
+                'password' => md5($password),
+            ];
+            $userId = $this->staffService->createOneWithRoles($params, [2]);
+        } elseif(!empty($password) && $password != "password_setted") {
+            // update auth user password
+            $this->staffService->changePWD($userId, md5($password));
+        }
         // student
-        $data = [];
+        $data = [
+            'userId' => $userId,
+        ];
         foreach (['name', 'grade', 'phoneNum'] as $key){
             $data[$key] = $request->input($key, '');
         }
@@ -96,6 +127,11 @@ class StudentController extends Controller
 
     public function delete(Request $request) {
         if ($id = $request->input('id', '')) {
+            // delete auth user
+            $student = $this->studentService->getInfoById($id);
+            $staff = $this->staffService->getInfoById($student['userId']);
+            $this->staffService->deleteOne($staff['id']);
+            // disable
             $this->studentService->disableOne($id);
         }
         return redirect("/student/index");
@@ -111,7 +147,6 @@ class StudentController extends Controller
     public function query(Request $request) {
         $params = [];
         $params['controlUrl'] = '/student/query';
-	dd($this);
         $this->initSearchBar($request, $params);
 
         $name = $request->input('name');

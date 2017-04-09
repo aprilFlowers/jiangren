@@ -16,6 +16,9 @@ class Timetable extends Migration
         Schema::create('timetable', function (Blueprint $table) {
             $table->increments('id');
             $table->integer('course')->index();
+            $table->string('subject')->default('')->index();
+            $table->string('student')->default('')->index();
+            $table->string('teacher')->default('')->index();
             $table->integer('index')->index();
             $table->date('start')->index();
             $table->date('end')->index();

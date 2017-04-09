@@ -134,19 +134,19 @@
             <tbody>
               @if(!empty($course))
                 @foreach ($course as $c)
-                  @if(!empty($c['courseInfo']))
+                  @if(!empty($c['subject']))
                   <tr>
                     <td>{{$c['id']}}</td>
-                    <td>{{$c['courseInfo']['subjectInfo']['name']}}</td>
-                    <td>{{$c['courseInfo']['teacherInfo']['name']}}</td>
-                    <td>{{$c['courseInfo']['studentInfo']['name']}}</td>
+                    <td>{{$subjects[$c['subject']]['name']}}</td>
+                    <td>{{$teachers[$c['teacher']]['name']}}</td>
+                    <td>{{$students[$c['student']]['name']}}</td>
                     <td>{{$c['start']}}</td>
                     <td>{{$c['end']}}</td>
                     <td>
                       @if($c['status'] == 2)
                         <button type="button" class="btn btn-default" disabled>已确认课程</button>
                       @elseif($admin == 'admin' && $c['status'] == 1)
-                        <button id="confirmBtn_{{$c['id']}}" type="button" class="btn btn-warning" onclick="clickCourse({{$c['id']}}, {{$c['courseInfo']['student']}})">确认课程</button>
+                        <button id="confirmBtn_{{$c['id']}}" type="button" class="btn btn-warning" onclick="clickCourse({{$c['id']}}, {{$c['student']}})">确认课程</button>
                       @endif
                     </td>
                   </tr>

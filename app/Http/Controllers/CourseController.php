@@ -20,6 +20,30 @@ class CourseController extends Controller
         $this->teacherService = new TeacherService();
     }
 
+    protected function getSubjects() {
+        $res = [];
+        foreach ($this->subjectService->getInfo() as $v) {
+            $res[$v->id] = $v;
+        }
+        return $res;
+    }
+
+    protected function getTeachers() {
+        $res = [];
+        foreach ($this->teacherService->getInfo() as $v) {
+            $res[$v->id] = $v;
+        }
+        return $res;
+    }
+
+    protected function getStudents() {
+        $res = [];
+        foreach ($this->studentService->getInfo() as $v) {
+            $res[$v->id] = $v;
+        }
+        return $res;
+    }
+
     public function subject(Request $request) {
         $params = [];
         $params['subjects'] = $this->subjectService->getInfo();
@@ -68,39 +92,37 @@ class CourseController extends Controller
         $this->initStudentOptions($request, $params, null);
         $this->initTeacherOptions($request, $params, null);
 
-        $courses = $this->courseService->getInfoByQuery([
-            'teacher' => $request->input("teacher", $params['vueOptions']['teacher']['selected']),
-            'student' => $request->input("student", $params['vueOptions']['student']['selected']),
-        ]);
-        $coursesAvailable = $this->filterAvailableCourses($courses);
-        $courseIds = [];
-        foreach ($courses as $course) {
-            $courseIds[] = $course['id'];
-        }
-        $coursesAvailableIds = [];
-        foreach ($coursesAvailable as $course) {
-            $coursesAvailableIds[] = $course['id'];
-        }
-        $tableInfos = $this->timetableService->getInfoByQuery([
-            'course' => ['in', $courseIds],
+        $teacher = $request->input("teacher", $params['vueOptions']['teacher']['selected']);
+        $student = $request->input("student", $params['vueOptions']['student']['selected']);
+
+        $query = [
             'start' => ['>=', $request->input("openTime", '')],
             'end' => ['<=', $request->input("endTime", '')],
             'status' => ['in', [2]], // confirmed
-        ])->toArray();
-        if (!empty($coursesAvailableIds)) {
-            $tableInfos = array_merge($this->timetableService->getInfoByQuery([
-                'course' => ['in', $coursesAvailableIds],
-                'start' => ['>=', $request->input("openTime", $defaultOpenTime)],
-                'end' => ['<=', $request->input("endTime", '')],
-                'status' => ['in', [1]], // active
-            ])->toArray(), $tableInfos);
+        ];
+        if(!empty($teacher)) {
+            $query['teacher'] = $teacher;
         }
-        foreach ($tableInfos as &$t) {
-            if (!empty($courses[$t['course']])) {
-                $t['courseInfo'] = $courses[$t['course']];
-            }
+        if(!empty($student)) {
+            $query['student'] = $student;
         }
+        $tableInfos = $this->timetableService->getInfoByQuery($query)->toArray();
+        $query = [
+            'start' => ['>=', $request->input("openTime", '')],
+            'end' => ['<=', $request->input("endTime", '')],
+            'status' => ['in', [1]], // active
+        ];
+        if(!empty($teacher)) {
+            $query['teacher'] = $teacher;
+        }
+        if(!empty($student)) {
+            $query['student'] = $student;
+        }
+        $tableInfos = array_merge($this->timetableService->getInfoByQuery($query)->toArray(), $tableInfos);
         $params['course'] = $tableInfos;
+        $params['subjects'] = $this->getSubjects();
+        $params['teachers'] = $this->getTeachers();
+        $params['students'] = $this->getStudents();
         $params['admin'] = \Entrust::hasRole(['admin']) ? 'admin' : '';
         return view('course.index', $params);
     }
@@ -188,37 +210,39 @@ class CourseController extends Controller
         $this->initStudentOptions($request, $params);
         $this->initTeacherOptions($request, $params);
 
-        // courses
-        $courses = $this->courseService->getInfoByQuery([
-            'teacher' => $request->input("teacher", $params['vueOptions']['teacher']['selected']),
-            'student' => $request->input("student", $params['vueOptions']['student']['selected']),
-        ]);
-        $coursesAvailable = $this->filterAvailableCourses($courses);
-        $params['courses'] = $coursesAvailable;
-        // timetable
-        $courseIds = [];
-        foreach ($courses as $course) {
-            $courseIds[] = $course['id'];
-        }
-        $coursesAvailableIds = [];
-        foreach ($coursesAvailable as $course) {
-            $coursesAvailableIds[] = $course['id'];
-        }
+        $teacher = $request->input("teacher", $params['vueOptions']['teacher']['selected']);
+        $student = $request->input("student", $params['vueOptions']['student']['selected']);
+
         list($weekStart, $weekEnd) = $this->getWeekStartEnd($request->input('openTime'));
-        $table = $this->timetableService->getInfoByQuery([
-            'course' => ['in', $courseIds],
+        $query = [
             'start' => ['>=', $weekStart],
             'end' => ['<=', $weekEnd.' 23:59:59'],
             'status' => ['in', [2]], // confirmed
-        ])->toArray();
-        if (!empty($coursesAvailableIds)) {
-            $table = array_merge($this->timetableService->getInfoByQuery([
-                'course' => ['in', $coursesAvailableIds],
-                'start' => ['>=', $weekStart],
-                'end' => ['<=', $weekEnd.' 23:59:59'],
-                'status' => ['in', [1]], // active
-            ])->toArray(), $table);
+        ];
+        if(!empty($teacher)) {
+            $query['teacher'] = $teacher;
         }
+        if(!empty($student)) {
+            $query['student'] = $student;
+        }
+        $table = $this->timetableService->getInfoByQuery($query)->toArray();
+        $query = [
+            'start' => ['>=', $weekStart],
+            'end' => ['<=', $weekEnd.' 23:59:59'],
+            'status' => ['in', [1]], // active
+        ];
+        if(!empty($teacher)) {
+            $query['teacher'] = $teacher;
+        }
+        if(!empty($student)) {
+            $query['student'] = $student;
+        }
+        $table = array_merge($this->timetableService->getInfoByQuery($query)->toArray(), $table);
+
+        // courses
+        $courses = $this->courseService->getInfoByQuery([]);
+        $coursesAvailable = $this->filterAvailableCourses($courses);
+        $params['courses'] = $coursesAvailable;
         foreach ($table as &$t) {
             if (!empty($courses[$t['course']])) {
                 $t['courseInfo'] = $courses[$t['course']];
@@ -226,6 +250,9 @@ class CourseController extends Controller
         }
         $params['table'] = $table;
         // others
+        $params['subjects'] = $this->getSubjects();
+        $params['teachers'] = $this->getTeachers();
+        $params['students'] = $this->getStudents();
         $params['time'] = $weekStart.'  --  '.$weekEnd;
         $params['weekStart'] = $weekStart;
         $params['weekEnd'] = $weekEnd;
@@ -280,6 +307,9 @@ class CourseController extends Controller
         // add base
         $data = [
             'course' => $course['id'],
+            'subject' => $course['subject'],
+            'teacher' => $course['teacher'],
+            'student' => $course['student'],
             'index' => $index,
         ];
         // add time

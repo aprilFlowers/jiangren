@@ -221,7 +221,7 @@
                                         <td class="drop" data-index="{{$id}}" height="50px">
                                           @foreach ($table as $t)
                                           @if ($id == $t['index'] && !empty($t['courseInfo']))
-                                            <div class="{{$t['status'] == 2 ? 'itemdisabled':'item'}} assigned" data-index="{{$t['id']}}" style="background: #{{$t['status'] == 2 ? 'ddd' : $t['courseInfo']['subjectInfo']['color']}}">{{$t['courseInfo']['subjectInfo']['name']}} | {{$t['courseInfo']['teacherInfo']['name']}} | {{$t['courseInfo']['studentInfo']['name']}}{{$t['status'] == 2 ? '（已确认）':''}}</div>
+                                            <div class="{{$t['status'] == 2 ? 'itemdisabled':'item'}} assigned" data-index="{{$t['id']}}" style="background: #{{$t['status'] == 2 ? 'ddd' : $t['courseInfo']['subjectInfo']['color']}}">{{$subjects[$t['subject']]['name']}} | {{$teachers[$t['teacher']]['name']}} | {{$students[$t['student']]['name']}}{{$t['status'] == 2 ? '（已确认）':''}}</div>
                                           @endif
                                           @endforeach
                                         </td>

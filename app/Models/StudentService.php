@@ -32,31 +32,34 @@ class StudentService extends BaseService {
     public function createOne($params){
         $_params = $this->formatInput($params);
         $id = parent::createOne($_params);
-        $res = $this->updateStudentCourses($id, $params);
+//        $res = $this->updateStudentCourses($id, $params);
         return $id;
     }
 
     public function updateOne($id, $params){
         $_params = $this->formatInput($params);
-        $res = $this->updateStudentCourses($id, $params);
+//        $res = $this->updateStudentCourses($id, $params);
         return parent::updateOne($id, $_params);
     }
 
-    public function updateStudentCourses($studentId, $params){
-        $res = true;
-        if ($studentId && !empty($params['courses'])) {
-            $courseService = new CourseService();
-            foreach ($params['courses'] as $course) {
-                if (empty($course['subject'])) break;
-                $course['student'] = $studentId;
-                if (!empty($course['id'])) {
-                    $res &= $courseService->updateOne($course['id'], $course);
-                } else {
-                    $res &= $courseService->createOne($course);
+    public function updateStudentCourses($id, $params){
+        $obj = parent::getInfoById($id);
+        $output = $this->formatOutput($obj);
+        $courseInfo = $output['courses'];
+        $data = $output;
+        $courseData = [];
+        foreach ($courseInfo as $o) {
+            $courses = $o;
+            if($o['cType'] == $params['cType']) {
+                if(!empty($o['period'])) {
+                    $courses['passPeriod'] += $params['period'];
                 }
             }
+            $courseData[] = $courses;
         }
-        return $res;
+        $data['courses'] = $courseData;
+        $_params = $this->formatInput($data);
+        return parent::updateOne($id, $_params);
     }
 
     public function disableOne($id){
@@ -89,6 +92,9 @@ class StudentService extends BaseService {
         if (!empty($input['family']) && is_array($input['family'])) {
             $input['family'] = json_encode($input['family']);
         }
+        if (!empty($input['courses']) && is_array($input['courses'])) {
+            $input['courses'] = json_encode($input['courses']);
+        }
         return $input;
     }
 
@@ -98,6 +104,9 @@ class StudentService extends BaseService {
         }
         if (!empty($output['family']) && is_string($output['family'])) {
             $output['family'] = json_decode($output['family'], true);
+        }
+        if (!empty($output['courses']) && is_string($output['courses'])) {
+            $output['courses'] = json_decode($output['courses'], true);
         }
         return $output;
     }

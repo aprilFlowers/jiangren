@@ -1,140 +1,20 @@
 @extends('layouts.app')
 
-@section('js')
-    <!-- jQuery EasyUI 1.5 -->
-    <script src="/public/default/js/jquery.easyui.min.js"></script>
-    <script src="/public/default/js/vue.js"></script>
-    <script src="/public/default/js/common/selectPlaceholder.js"></script>
-    <script src="/public/default/js/My97DatePicker/WdatePicker.js"></script>
-    <script>
-        $(function(){
-            var teacher = new Vue({
-                el: '#teachers',
-                delimiters: ['<%','%>'],
-                data: {
-                    selected: "{{!empty($vueOptions['teacher']['selected'])?$vueOptions['teacher']['selected']:''}}",
-                    options:{!! json_encode($vueOptions['teacher']['options']) !!}
-                }
-            });
-            @if(\Entrust::hasRole('admin') || \Entrust::hasRole('student'))
-              teacher.options.unshift({'value':'', 'text':'全部教师'});
-            @endif
-            var student = new Vue({
-                el: '#students',
-                delimiters: ['<%','%>'],
-                data: {
-                  selected: "{{!empty($vueOptions['student']['selected'])?$vueOptions['student']['selected']:''}}",
-                    options:{!! json_encode($vueOptions['student']['options']) !!}
-                }
-            });
-            @if(\Entrust::hasRole('admin') || \Entrust::hasRole('teacher'))
-              student.options.unshift({'value':'', 'text':'全部学生'});
-            @endif
-            var openTime = new Vue({
-                el  : '#openTimes',
-                data: {
-                  openTime: "{{!empty($vueOptions['openTime']['selected']) ? $vueOptions['openTime']['selected'] : ''}}"
-                }
-            });
-
-            $('.item').draggable({
-                revert:true,
-                proxy:'clone',
-                disabled : {{$admin == 'admin' ? 'false' : 'true'}},
-            });
-            $('.itemdisabled').draggable({
-                revert:true,
-                disabled : true,
-            });
-
-            $('.left').droppable({
-                accept:'.assigned',
-                onDragEnter:function(e,source){
-                    $(source).addClass('trash');
-                },
-                onDragLeave:function(e,source){
-                    $(source).removeClass('trash');
-                },
-                onDrop:function(e,source){
-                    if(confirm('确认删除！')) {
-                        $.ajax({
-                            url : '/course/markTimetable/deleteData',
-                            dataType : 'json',
-                            data :{
-                                id : $(source).attr('data-index')
-                            },
-                            success : function(data) {
-                                alert(data.errorMsg);
-                                if (data.errorCode == 0) {
-                                  $(source).remove();
-                                }
-                            }
-                        });
-                    }
-                }
-            });
-
-            $('.right td.drop').droppable({
-                accept:'.item',
-                onDragEnter:function(){
-                    //enter table
-                    $(this).addClass('over');
-                },
-                onDragLeave:function(){
-                    //leave table
-                    $(this).removeClass('over');
-                },
-                onDrop:function(e,source){
-                    $(this).removeClass('over');
-                    var _self = this;
-                    if ($(source).hasClass('assigned')){
-                        //update
-                        $.ajax({
-                            url : '/course/markTimetable/saveData',
-                            dataType : 'json',
-                            data :{
-                                id : $(source).attr('data-index'),
-                                index : $(this).attr('data-index'),
-                                weekStart : '{{$weekStart}}',
-                                weekEnd : '{{$weekEnd}}',
-                            },
-                            success : function(data) {
-                                if (data.errorCode == 0) {
-                                    $(_self).append(source);
-                                }
-                                alert(data.errorMsg);
-                            }
-                        });
-                    } else {
-                        //add
-                        var c = $(source).clone().addClass('assigned');
-                        c.draggable({
-                            revert:true
-                        });
-                        // save event data
-                        $.ajax({
-                            url : '/course/markTimetable/saveData',
-                            dataType : 'json',
-                            data :{
-                                courseId : $(source).attr('data-index'),
-                                index : $(this).attr('data-index'),
-                                weekStart : '{{$weekStart}}',
-                                weekEnd : '{{$weekEnd}}',
-                            },
-                            success : function(data) {
-                              alert(data.errorMsg);
-                              if (data.errorCode == 0) {
-                                  c.attr('data-index', data.data.id);
-                                $(_self).append(c);
-                              }
-                            }
-                        });
-                    }
-                }
-            });
-        })
-    </script>
-
+@section('css')
+    <style type="text/css">
+        .showBox {
+            width: 100%;
+            height: 100%;
+            background-color: #777;
+            opacity: 0.7;
+            filter: alpha(opacity=70);
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 10;
+            display: none;
+        }
+    </style>
 @endsection
 
 @section('content')
@@ -172,70 +52,103 @@
     <div class="box">
       <div class="box-body" style="min-height: 700px">
         <div class="row">
-                <!-- course list -->
-                <div class="col-md-3 left">
-                    <div class="box box-solid">
-                        <div class="box-header with-border">
-                          <h4 class="box-title">课程列表</h4>
-                        </div>
-                        <div class="box-body">
-                            <!-- the events -->
-                            <div id="external-events" style="max-height:500px; overflow:auto;">
-                              @foreach($courses as $course)
-                                <div class="item" data-index="{{$course['id']}}" style="background: #{{$course['subjectInfo']['color']}}">{{$course['subjectInfo']['name']}} | {{$course['teacherInfo']['name']}} | {{$course['studentInfo']['name']}}</div>
-                              @endforeach
-
-                            </div>
-                            <div class="demo-info" style="margin-bottom:10px">
-                              <div class="demo-tip icon-tip">&nbsp;</div>
-                              <div>添加课程：请将课程拖拽至课程表中</div>
-                              <div>删除课程：请将课程拖回至本列表中</div>
-                            </div>
-                        </div>
-                        <!-- /.box-body -->
-                    </div>
-                </div>
-                <!-- end course list -->
-                <!-- right timetable -->
-                <div class="col-md-9">
-                    <div class="right box box-solid">
-                    <div class="box-body no-padding" id="sortable">
-                            <h2 style="text-align: center;">{{$time}}</h2>
-                            <table class="timetable" cellspacing="0" width="100%" style="text-align:center; word-break:break-all; word-wrap:break-word;">
-                                <thead>
+            <!-- right timetable -->
+            <div class="col-md-9">
+                <div class="right box box-solid">
+                <div class="box-body no-padding" id="sortable">
+                        <h2 style="text-align: center;">{{$time}}</h2>
+                        <table class="timetable" cellspacing="0" width="100%" style="text-align:center; word-break:break-all; word-wrap:break-word;">
+                            <thead>
+                            <tr>
+                                <td class="blank" width="12.5%">时间\星期</td>
+                                <td class="title" width="12.5%">星期日</td>
+                                <td class="title" width="12.5%">星期一</td>
+                                <td class="title" width="12.5%">星期二</td>
+                                <td class="title" width="12.5%">星期三</td>
+                                <td class="title" width="12.5%">星期四</td>
+                                <td class="title" width="12.5%">星期五</td>
+                                <td class="title" width="12.5%">星期六</td>
+                            </tr>
+                            </thead>
+                            @foreach ($lessons as $lesson)
                                 <tr>
-                                    <td class="blank" width="12.5%">节次\星期</td>
-                                    <td class="title" width="12.5%">星期一</td>
-                                    <td class="title" width="12.5%">星期二</td>
-                                    <td class="title" width="12.5%">星期三</td>
-                                    <td class="title" width="12.5%">星期四</td>
-                                    <td class="title" width="12.5%">星期五</td>
-                                    <td class="title" width="12.5%">星期六</td>
-                                    <td class="title" width="12.5%">星期日</td>
-                                </tr>
-                                </thead>
-                                @foreach ($lessons as $lesson)
-                                    <tr>
-                                        <td class="time">{{$lesson['name']}}</td>
-                                        @foreach($lesson['id'] as $id)
-                                        <td class="drop" data-index="{{$id}}" height="50px">
-                                          @foreach ($table as $t)
-                                          @if ($id == $t['index'] && !empty($t['courseInfo']))
-                                            <div class="{{$t['status'] == 2 ? 'itemdisabled':'item'}} assigned" data-index="{{$t['id']}}" style="background: #{{$t['status'] == 2 ? 'ddd' : $t['courseInfo']['subjectInfo']['color']}}">{{$subjects[$t['subject']]['name']}} | {{$teachers[$t['teacher']]['name']}} | {{$students[$t['student']]['name']}}{{$t['status'] == 2 ? '（已确认）':''}}</div>
+                                    <td class="time">{{$lesson['name']}}</td>
+                                    @foreach($lesson['id'] as $id)
+                                    <td class="drop" data-index="{{$id}}" height="50px">
+                                      @foreach ($table as $k => $t)
+                                          @if ($id == $k)
+                                              <div>共有{{$t['total']}}节课</div>
+                                              <div><a onclick="showCourseInfos('{{$t['info']}}', '{{$t['date']}}')" href="#">查看详情</a></div>
                                           @endif
-                                          @endforeach
-                                        </td>
-                                        @endforeach
-                                    </tr>
-                                @endforeach
-                            </table>
-                    </div>
-                    </div>
-                    <!-- /.box-body -->
+                                      @endforeach
+                                    </td>
+                                    @endforeach
+                                </tr>
+                            @endforeach
+                        </table>
                 </div>
-                <!-- end timetable -->
+                </div>
+                <!-- /.box-body -->
             </div>
+            <!-- end timetable -->
         </div>
+      </div>
         <!-- /.box-body -->
+      <div class="showBox"></div>
+        <!-- /.showbox -->
     </div>
+@endsection
+
+@section('js')
+    <!-- jQuery EasyUI 1.5 -->
+    <script src="/public/default/js/jquery.easyui.min.js"></script>
+    <script src="/public/default/js/vue.js"></script>
+    <script src="/public/default/js/common/selectPlaceholder.js"></script>
+    <script src="/public/default/js/My97DatePicker/WdatePicker.js"></script>
+    <script>
+        $(function(){
+            var teacher = new Vue({
+                el: '#teachers',
+                delimiters: ['<%','%>'],
+                data: {
+                    selected: "{{!empty($vueOptions['teacher']['selected'])?$vueOptions['teacher']['selected']:''}}",
+                    options:{!! json_encode($vueOptions['teacher']['options']) !!}
+                }
+            });
+            @if(\Entrust::hasRole('admin') || \Entrust::hasRole('student'))
+              teacher.options.unshift({'value':'', 'text':'全部教师'});
+                    @endif
+            var student = new Vue({
+                        el: '#students',
+                        delimiters: ['<%','%>'],
+                        data: {
+                            selected: "{{!empty($vueOptions['student']['selected'])?$vueOptions['student']['selected']:''}}",
+                            options:{!! json_encode($vueOptions['student']['options']) !!}
+                        }
+                    });
+            @if(\Entrust::hasRole('admin') || \Entrust::hasRole('teacher'))
+              student.options.unshift({'value':'', 'text':'全部学生'});
+                    @endif
+            var openTime = new Vue({
+                        el  : '#openTimes',
+                        data: {
+                            openTime: "{{!empty($vueOptions['openTime']['selected']) ? $vueOptions['openTime']['selected'] : ''}}"
+                        }
+                    });
+        });
+
+        function showCourseInfos (courseInfos, date) {
+            $('.showBox').show();
+            $('.showBox').append("<div id='courseInfo' style='color:white;text-align: center'> <h2>"+date+" </h2> </div>");
+            console.log(courseInfos);
+            $.each($.parseJSON(courseInfos), function(index, content) {
+                $('#courseInfo').append("<div style='color:white;align-content: center'>" + content.course + "</div>");
+            });
+        }
+        $('.showBox').on('click', function () {
+            $(this).hide();
+            $('#courseInfo').remove();
+        });
+    </script>
+
 @endsection

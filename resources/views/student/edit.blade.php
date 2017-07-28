@@ -12,16 +12,17 @@
             }
 
             function courseInfo() {
-                this.course = {
-                    selected : "--请选择课程--",
-                    options : {!! json_encode($vueOptions['subject']['options']) !!}
+                this.cType = {
+                    selected : "--请选择课程形式--",
+                    options : {!! json_encode($vueOptions['cType']['options']) !!}
                 };
-                this.teacher = {
-                    selected : "--请选择老师--",
-                    options : {!! json_encode($vueOptions['teacher']['options']) !!},
-                };
+                {{--this.teacher = {--}}
+                    {{--selected : "--请选择老师--",--}}
+                    {{--options : {!! json_encode($vueOptions['teacher']['options']) !!},--}}
+                {{--};--}}
                 this.period = null;
                 this.restPeriod = null;
+                this.passPeriod = null;
             }
 
             var sex = new Vue({
@@ -60,8 +61,8 @@
                 el: '#courses',
                 delimiters: ['<%', '%>'],
                 data: {
-                  subjects: {!! json_encode($vueOptions['subject']['options']) !!},
-                  teachers:{!! json_encode($vueOptions['teacher']['options']) !!},
+                  cType: {!! json_encode($vueOptions['cType']['options']) !!},
+                  {{--teachers:{!! json_encode($vueOptions['teacher']['options']) !!},--}}
                   courses: studentCourses
                 },
                 methods: {
@@ -220,30 +221,34 @@
                     <div class="form-group">
                       <div class="row" id="course">
                         <div v-for="(course, index) in courses">
-                          <div class="col-lg-3 col-md-3 col-sm-12">
-                            <label>科目</label>
-                            <select class="subjectId form-control" name="subjects[]" v-model="course.subject">
-                              <option v-for="option in subjects" v-bind:value="option.value"> <% option.text %>
+                          <div class="col-lg-2 col-md-12 col-sm-12">
+                            <label>课程形式</label>
+                            <select class="subjectId form-control" name="cType[]" v-model="course.cType">
+                              <option v-for="option in cType" v-bind:value="option.value"> <% option.text %>
                               </option>
                             </select>
                           </div>
-                            <div class="col-lg-3 col-md-3 col-sm-12">
-                                <label>老师</label>
-                                <select class="teacher form-control" name="teachers[]" v-model="course.teacher">
-                                    <option v-for="option in teachers" v-bind:value="option.value"> <% option.text %>
-                                    </option>
-                                </select>
-                            </div>
-                          <div class="col-lg-2 col-md-2 col-sm-12">
+                            {{--<div class="col-lg-3 col-md-3 col-sm-12">--}}
+                                {{--<label>老师</label>--}}
+                                {{--<select class="teacher form-control" name="teachers[]" v-model="course.teacher">--}}
+                                    {{--<option v-for="option in teachers" v-bind:value="option.value"> <% option.text %>--}}
+                                    {{--</option>--}}
+                                {{--</select>--}}
+                            {{--</div>--}}
+                          <div class="col-lg-3 col-md-12 col-sm-12">
                             <label>总课时</label>
                             <input type="text" class="form-control" placeholder="课时" name="periods[]" style="margin-bottom:10px;" v-model="course.period">
                             <input type="text" class="form-control" name="cIds[]" v-model="course.id" style="display: none;">
                           </div>
-                          <div class="col-lg-2 col-md-2 col-sm-12">
+                          <div class="col-lg-3 col-md-12 col-sm-12">
                             <label>剩余课时</label>
-                            <input type="text" class="form-control" placeholder="剩余课时" style="margin-bottom:10px;" v-model="course.periodLeft" readonly>
+                            <input type="text" class="form-control" placeholder="剩余课时" style="margin-bottom:10px;" v-model="course.restPeriod" readonly>
                           </div>
-                            <div class="col-lg-1 col-md-1 col-sm-12">
+                            <div class="col-lg-3 col-md-12 col-sm-12" DISABLED="disabled">
+                                <label>已上课时</label>
+                                <input type="text" class="form-control" placeholder="已上课时" style="margin-bottom:10px;" v-model="course.passPeriod" readonly>
+                            </div>
+                            <div class="col-lg-1 col-md-12 col-sm-12">
                                 <label>操作</label>
                                 <button type="button" class="form-control btn btn-danger" v-on:click="deleteCourse(index)">删除</button>
                             </div>

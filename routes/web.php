@@ -47,6 +47,10 @@ Route::get('/student/index/edit', 'StudentController@edit');
 Route::post('/student/update', 'StudentController@update');
 Route::get('/student/index/delete', 'StudentController@delete');
 Route::get('/student/deleteCourse', 'StudentController@deleteCourse');
+Route::get('/student/group', 'StudentController@group');
+Route::get('/student/group/edit', 'StudentController@groupEdit');
+Route::post('/student/group/update', 'StudentController@groupUpdate');
+Route::get('/student/group/delete', 'StudentController@groupDelete');
 
 //course
 Route::get('/course/subject', 'CourseController@subject');
@@ -62,5 +66,4 @@ Route::post('/course/index/clickCourse', 'CourseController@clickCourse');
 Route::get('/course/index/clickCourse', 'CourseController@clickCourse');
 Route::get('/course/timetable', 'CourseController@timetable');
 Route::post('/course/timetable', 'CourseController@timetable');
-Route::get('/course/markTimetable/saveData', 'CourseController@saveTimetableData');
-Route::get('/course/markTimetable/deleteData', 'CourseController@deleteTimetableData');
+Route::get('/course/getStuGroup', 'CourseController@getStuGroup');

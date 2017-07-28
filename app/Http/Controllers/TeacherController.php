@@ -37,6 +37,7 @@ class TeacherController extends Controller
     public function update(Request $request) {
         $userId = $request->input('userId', '');
         $password = $request->input('password', '');
+
         // create auth user
         if (empty($userId)) {
             $params = [
@@ -52,7 +53,7 @@ class TeacherController extends Controller
         $data = [
             'userId' => $userId,
         ];
-        foreach (['name', 'sex', 'phoneNum'] as $key){
+        foreach (['name', 'sex', 'phoneNum', 'type', 'remark'] as $key){
             $data[$key] = $request->input($key);
         }
         // update or create

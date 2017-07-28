@@ -7,6 +7,7 @@
   <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
 
   <title>匠人课程系统</title>
+  @yield('css')
   <link rel="stylesheet" href="/public/default/css/reset.min.css">
   <!-- Bootstrap 3.3.6 -->
   <link rel="stylesheet" href="/public/default/css/bootstrap.min.css">

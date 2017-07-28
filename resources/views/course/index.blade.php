@@ -17,16 +17,27 @@
       @if(\Entrust::hasRole('admin') || \Entrust::hasRole('student'))
         teacher.options.unshift({'value':'', 'text':'全部教师'});
       @endif
-      var student = new Vue({
-        el: '#students',
+      var stuGroup = new Vue({
+        el: '#stuGroups',
         delimiters: ['<%','%>'],
         data: {
-          selected: "{{!empty($vueOptions['student']['selected'])?$vueOptions['student']['selected']:''}}",
-          options:{!! json_encode($vueOptions['student']['options']) !!}
+          selected: "{{!empty($vueOptions['stuGroup']['selected'])?$vueOptions['stuGroup']['selected']:''}}",
+          options:{!! json_encode($vueOptions['stuGroup']['options']) !!}
         }
       });
       @if(\Entrust::hasRole('admin') || \Entrust::hasRole('teacher'))
-        student.options.unshift({'value':'', 'text':'全部学生'});
+        stuGroup.options.unshift({'value':'', 'text':'全部学生组合'});
+      @endif
+      var cStatus = new Vue({
+        el: '#cStatus',
+        delimiters: ['<%','%>'],
+        data: {
+          selected: "{{!empty($vueOptions['status']['selected'])?$vueOptions['status']['selected']:''}}",
+          options:{!! json_encode($vueOptions['status']['options']) !!}
+        }
+      });
+      @if(\Entrust::hasRole('admin') || \Entrust::hasRole('teacher'))
+        cStatus.options.unshift({'value':'', 'text':'全部课程'});
       @endif
       var openTime = new Vue({
         el  : '#openTime',
@@ -50,24 +61,29 @@
           extend: 'excel',
           filename: '课程列表'
         }, 'pdf', 'colvis' ]
-      } );
+      });
       table.buttons().container().appendTo( '#example_wrapper .col-sm-6:eq(0)' );
     });
   </script>
   <script>
-    function clickCourse(cid, sid){
+    function clickCourse(cid, sIdStr, cType, period){
+      console.log(2);
       if(confirm('确认课程!')){
         $.ajax({
           type:'get',
           url:"/course/index/clickCourse",
           data:{
             cid : cid,
-            sid : sid,
+            sIdStr : sIdStr,
+            cType : cType,
+            period : period,
           },
           dataType  : 'json',
           success   : function(data){
             alert(data.errorMsg);
             $('#confirmBtn_'+cid).removeClass('btn-warning').addClass('btn-default');
+            $('#delete_'+cid).remove();
+            $('#cid_'+cid).removeAttr('href');
             $('#confirmBtn_'+cid).attr('disabled', true).html('已确认课程');
           }
         });
@@ -91,8 +107,8 @@
                 <option v-for="option in options" v-bind:value="option.value"> <% option.text %> </option>
               </select>
             </div>
-            <div class="col-xs-12 col-md-6 col-lg-2" style="margin: 5px 0 5px 0;" id="students">
-              <select class="form-control" id="student" name="student" v-model="selected">
+            <div class="col-xs-12 col-md-6 col-lg-2" style="margin: 5px 0 5px 0;" id="stuGroups">
+              <select class="form-control" id="stuGroup" name="stuGroup" v-model="selected">
                 <option v-for="option in options" v-bind:value="option.value"> <% option.text %> </option>
               </select>
             </div>
@@ -106,8 +122,14 @@
                                                                                                                     placeholder="结束时间" v-model="endTime" onClick="WdatePicker({skin:'whyGreen',dateFmt:'yyyy-MM-dd HH:mm:ss',
                                                                                                                                                                  minDate:'2008-03-08 11:30:00'})">
             </div>
+            <div class="col-xs-12 col-md-6 col-lg-2" style="margin: 5px 0 5px 0;" id="cStatus">
+              <select class="form-control" id="status" name="status" v-model="selected">
+                <option v-for="option in options" v-bind:value="option.value"> <% option.text %> </option>
+              </select>
+            </div>
             <div class="col-xs-12 col-md-6 col-lg-2" style="margin: 5px 0 5px 0;">
               <button type="submit" class="btn btn-info">查找</button>
+              <button type="button" class="btn btn-success" onClick="location.href='{{$controlUrl}}/edit'">新建</button>
             </div>
           </div>
         </div>
@@ -125,6 +147,7 @@
                 <th>ID</th>
                 <th>科目</th>
                 <th>老师</th>
+                <th>课程形式</th>
                 <th>学生</th>
                 <th>开始时间</th>
                 <th>结束时间</th>
@@ -134,23 +157,29 @@
             <tbody>
               @if(!empty($course))
                 @foreach ($course as $c)
-                  @if(!empty($c['subject']))
                   <tr>
-                    <td>{{$c['id']}}</td>
-                    <td>{{$subjects[$c['subject']]['name']}}</td>
-                    <td>{{$teachers[$c['teacher']]['name']}}</td>
-                    <td>{{$students[$c['student']]['name']}}</td>
-                    <td>{{$c['start']}}</td>
-                    <td>{{$c['end']}}</td>
+                    <td>
+                      @if($c['status'] == 2)
+                        {{$c['id']}}
+                      @elseif($admin == 'admin' && $c['status'] == 1)
+                        <a id="cid_{{$c['id']}}" href="{{$controlUrl}}/edit?id={{$c['id']}}">{{$c['id']}}</a>
+                      @endif
+                    </td>
+                    <td>{{$c['subject']}}</td>
+                    <td>{{$c['teacher']}}</td>
+                    <td>{{$c['cType']}}</td>
+                    <td>{{$c['student']}}</td>
+                    <td>{{$c['openTime']}}</td>
+                    <td>{{$c['endTime']}}</td>
                     <td>
                       @if($c['status'] == 2)
                         <button type="button" class="btn btn-default" disabled>已确认课程</button>
                       @elseif($admin == 'admin' && $c['status'] == 1)
-                        <button id="confirmBtn_{{$c['id']}}" type="button" class="btn btn-warning" onclick="clickCourse({{$c['id']}}, {{$c['student']}})">确认课程</button>
+                        <button id="confirmBtn_{{$c['id']}}" type="button" class="btn btn-warning" onclick="clickCourse({{$c['id']}}, '{{$c['sIdStr']}}', {{$c['cTypeNum']}}, {{$c['period']}})">确认课程</button>
+                        <a id="delete_{{$c['id']}}" class="btn btn-danger" href="/course/index/delete?id={{$c['id']}}" onclick="return confirm('确认删除！')">删除</a>
                       @endif
                     </td>
                   </tr>
-                  @endif
                 @endforeach
               @endif
             </tbody>

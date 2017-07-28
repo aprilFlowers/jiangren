@@ -2,20 +2,10 @@
 namespace App\Models;
 
 use App\Models\Service\BaseService;
-use App\Models\SubjectService;
-use App\Models\TeacherService;
-use App\Models\StudentService;
-use App\Models\TimetableService;
 
 class CourseService extends BaseService {
     public function __construct(){
         parent::__construct(new Course(), 'jr_cms');
-    }
-
-    public function getInfo(){
-        $list = parent::getInfo();
-        $this->appendDetailInfos($list);
-        return $this->formatOutputList($list);
     }
 
     public function getAvailable(){
@@ -29,13 +19,6 @@ class CourseService extends BaseService {
         $this->appendDetailInfo($obj);
         return $obj;
     }
-
-    public function getInfoByQuery($query, $notEmpty = true) {
-        $list = parent::getInfoByQuery($query, $notEmpty);
-        $this->appendDetailInfos($list);
-        return $this->formatOutputList($list);
-    }
-
 
     public function getCourseConfirmed($courseId) {
         $timetableService = new TimetableService();

@@ -13,6 +13,14 @@
                     options:{!! json_encode(array_replace($vueOptions['sex']['options'])) !!}
                 }
             });
+            new Vue({
+                el: '#types',
+                delimiters: ['<%','%>'],
+                data: {
+                    selected: "{{!empty($teacher['type']) ? $teacher['type'] : 1 }}",
+                    options:{!! json_encode(array_replace($vueOptions['type']['options'])) !!}
+                }
+            });
             //sex.options.unshift({'value':-1, 'text':'无性别'});
         })
     </script>
@@ -52,6 +60,20 @@
                         <div class="col-xs-12 col-md-6 col-lg-4">
                             <label for="phoneNum">电话</label>
                             <input id="phoneNum" name="phoneNum" type="text" class="form-control" placeholder="电话" value="{{!empty($teacher['phoneNum']) ? $teacher['phoneNum'] : ''}}">
+                        </div>
+                    </div>
+                    <div class="input-group" style="width:100%; margin-bottom:20px;" id="types">
+                        <div class="col-xs-12 col-md-6 col-lg-4">
+                            <label for="type">类型</label>
+                            <select class="form-control" id="type" name="type" v-model="selected">
+                                <option v-for="option in options" v-bind:value="option.value"> <% option.text %> </option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="input-group" style="width:100%; margin-bottom:20px;" id="sexs">
+                        <div class="col-xs-12 col-md-6 col-lg-4">
+                            <label for="sex">备注</label>
+                            <textarea class="form-control" id="remark" name="remark" rows="10">{{!empty($teacher['remark']) ? $teacher['remark'] : ''}}</textarea>
                         </div>
                     </div>
                 </div>

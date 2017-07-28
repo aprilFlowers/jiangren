@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\GroupService;
 use App\Models\StudentService;
 use App\Models\SubjectService;
 use App\Models\CourseService;
@@ -18,30 +19,7 @@ class CourseController extends Controller
         $this->timetableService = new TimetableService();
         $this->studentService = new StudentService();
         $this->teacherService = new TeacherService();
-    }
-
-    protected function getSubjects() {
-        $res = [];
-        foreach ($this->subjectService->getInfo() as $v) {
-            $res[$v->id] = $v;
-        }
-        return $res;
-    }
-
-    protected function getTeachers() {
-        $res = [];
-        foreach ($this->teacherService->getInfo() as $v) {
-            $res[$v->id] = $v;
-        }
-        return $res;
-    }
-
-    protected function getStudents() {
-        $res = [];
-        foreach ($this->studentService->getInfo() as $v) {
-            $res[$v->id] = $v;
-        }
-        return $res;
+        $this->groupService = new GroupService();
     }
 
     public function subject(Request $request) {
@@ -88,42 +66,44 @@ class CourseController extends Controller
             'openTime' => $request->input("openTime", $defaultOpenTime),
             'endTime' => $request->input("openTime", $defaultEndTime),
         ];
-        $this->initVueOptions($request, $params, null);
-        $this->initStudentOptions($request, $params, null);
-        $this->initTeacherOptions($request, $params, null);
-
-        $teacher = $request->input("teacher", $params['vueOptions']['teacher']['selected']);
-        $student = $request->input("student", $params['vueOptions']['student']['selected']);
-
-        $query = [
-            'start' => ['>=', $request->input("openTime", '')],
-            'end' => ['<=', $request->input("endTime", '')],
-            'status' => ['in', [2]], // confirmed
-        ];
-        if(!empty($teacher)) {
-            $query['teacher'] = $teacher;
-        }
-        if(!empty($student)) {
-            $query['student'] = $student;
-        }
-        $tableInfos = $this->timetableService->getInfoByQuery($query)->toArray();
-        $query = [
-            'start' => ['>=', $request->input("openTime", '')],
-            'end' => ['<=', $request->input("endTime", '')],
-            'status' => ['in', [1]], // active
-        ];
-        if(!empty($teacher)) {
-            $query['teacher'] = $teacher;
-        }
-        if(!empty($student)) {
-            $query['student'] = $student;
-        }
-        $tableInfos = array_merge($this->timetableService->getInfoByQuery($query)->toArray(), $tableInfos);
-        $params['course'] = $tableInfos;
-        $params['subjects'] = $this->getSubjects();
-        $params['teachers'] = $this->getTeachers();
-        $params['students'] = $this->getStudents();
         $params['admin'] = \Entrust::hasRole(['admin']) ? 'admin' : '';
+        $params['controlUrl'] = '/course/index';
+
+        $this->initVueOptions($request, $params);
+        $this->initCStatus($request, $params);
+        $this->initStudentOptions($request, $params, 1, true);
+        $this->initTeacherOptions($request, $params, 1, true);
+        $this->initStuGroupOptions($request, $params);
+
+        $teacher = $request->input("teacher", '');
+        $student = $request->input("student", '');
+        if($status = $request->input('status', '')) {
+            $s = [$status];
+        } else {
+            $s = [1,2];
+        }
+        $query = [
+            'openTime' => ['>=', $request->input("openTime", '')],
+            'endTime' => ['<=', $request->input("endTime", '')],
+            'status' => ['in', $s], // confirmed
+        ];
+
+        if(!empty($teacher)) {
+            $query['teacher'] = $teacher;
+        }
+        if(!empty($student)) {
+            $query['student'] = $student;
+        }
+
+        $courseInfos = $this->courseService->getInfoByQuery($query);
+
+        foreach ($courseInfos as $k => $c) {
+            $course = $c;
+            $course['cTypeNum'] = $c['cType'];
+            $course['sIdStr'] = str_replace(',', '_', $c['student']);
+            list($course['teacher'], $course['subject'], $course['student'], $course['cType']) = $this->getNameInfo($c['teacher'], $c['subject'], $c['student'], $c['cType']);
+            $params['course'][] = $course;
+        }
         return view('course.index', $params);
     }
 
@@ -131,11 +111,14 @@ class CourseController extends Controller
         $id = $request->input('id', '');
 
         $params = [];
+        $params['controlUrl'] = '/course/index';
         $this->initVueOptions($request, $params);
+        $this->initTeacherOptions($request, $params, null);
+        $this->initStuGroupOptions($request, $params);
 
         if($id){
             $courseInfos = $this->courseService->getInfoById($id);
-            $keys = ['teacher', 'student', 'subject'];
+            $keys = ['teacher', 'student', 'subject', 'stuGroup'];
             foreach ($keys as $key){
                 $params[$key]['selected'] = $courseInfos[$key];
             }
@@ -143,43 +126,138 @@ class CourseController extends Controller
             foreach ($_keys as $_key){
                 $params['course'][$_key] = $courseInfos[$_key];
             }
+            $params['openTime'] = $courseInfos['openTime'];
+            $params['endTime'] = $courseInfos['endTime'];
+        }
+        return view('course.edit', $params);
+    }
+
+    public function update(Request $request) {
+        $stuGroup = $request->input('stuGroup', '');
+        $openTime = $request->input('openTime', '');
+        $endTime = $request->input('endTime', '');
+        $period = floor((strtotime($endTime)-strtotime($openTime)) / 3600);
+
+        $stuGroupInfo = $this->groupService->getInfoById($stuGroup);
+        $week = date('w', strtotime($openTime));
+        foreach (config('language.study.lesson') as $k => $lesson) {
+            if(strtotime($lesson['start']) < strtotime(date('H:i', strtotime($openTime))) && strtotime($lesson['end']) > strtotime(date('H:i', strtotime($endTime)))) {
+                $time = $k;
+            }
         }
 
-        return view('course.edit', $params);
+        $index = $time . ($week + 1);
+        $params = [
+            'teacher' => $request->input('teacher', ''),
+            'subject' => $stuGroupInfo['subject'],
+            'student' => $stuGroupInfo['student'],
+            'cType' => $stuGroupInfo['cType'],
+            'openTime' => $openTime,
+            'endTime' => $endTime,
+            'period' => $period,
+            'stuGroup' => $stuGroup,
+            't_index' => $index,
+            'status' => 1,
+        ];
+        if($id = $request->input('id', '')){
+            $res = $this->courseService->updateOne($id, $params);
+        } else {
+            $res = $this->courseService->createOne($params);
+        }
+
+        return redirect('/course/index');
     }
 
     public function delete(Request $request) {
         $id=$request->input('id', '');
-        $hisCourseData = $this->courseService->getInfoById($id);
         $res = $this->courseService->deleteOne($id);
-        $stuInfos = $this->studentService->getInfoById($hisCourseData['student']);
-        $courseInfos = json_decode($stuInfos['courseInfos'], true);
-
-        $_data = [];
-        if(!empty($courseInfos)) {
-            foreach ($courseInfos as $k => $v) {
-                if ($v['courseId'] != $id) {
-                    $_data[] = $v;
-                }
-            }
-        }
-        $coursesData['courseInfos'] = json_encode($_data);
-        $r = $this->studentService->updateOne($hisCourseData['student'], $coursesData);
         $dir = "/course/index";
         return redirect($dir);
     }
 
     public function clickCourse(Request $request) {
         $cid = $request->input('cid');
+        $sIdStr = $request->input('sIdStr');
+        $cType = $request->input('cType');
+        $period = $request->input('period');
 
         $msg = [ 'errorCode' => 1, 'errorMsg' => '操作失败！' ];
 
-        $res = $this->timetableService->updateOne($cid, ['status' => 2]);
+        // reduce student course passPeriod
+        $res = $this->reduceCoursePeriod($sIdStr, $cType, $period);
+
+        //update course startus
+        $res = $this->courseService->updateOne($cid, ['status' => 2]);
         if ($res) {
             $msg['errorCode'] = 0;
             $msg['errorMsg'] = '操作成功';
         }
         echo json_encode($msg);
+    }
+
+    public function timetable(Request $request) {
+        $params = ['table' => []];
+        $this->initVueOptions($request, $params);
+        $this->initStudentOptions($request, $params);
+        $this->initTeacherOptions($request, $params);
+
+        $teacher = $request->input("teacher", $params['vueOptions']['teacher']['selected']);
+        $student = $request->input("student", $params['vueOptions']['student']['selected']);
+
+        list($weekStart, $weekEnd) = $this->getWeekStartEnd($request->input('openTime'));
+        $query = [
+            'openTime' => ['>=', $weekStart],
+            'endTime' => ['<=', $weekEnd.' 23:59:59'],
+            'status' => ['in', [1]],
+        ];
+        if(!empty($teacher)) {
+            $query['teacher'] = $teacher;
+        }
+        if(!empty($student)) {
+            $query['student'] = $student;
+        }
+
+        $params['time'] = $weekStart.'  --  '.$weekEnd;
+        $params['weekStart'] = $weekStart;
+        $params['weekEnd'] = $weekEnd;
+        $params['lessons'] = config('language.study.lesson', []);
+        $params['admin'] = (\Entrust::hasRole(['admin']) || \Entrust::hasRole('teacher')) ? 'admin' : '';
+        $courseInfos = $this->courseService->getInfoByQuery($query);
+
+        foreach ($courseInfos as $k => $c) {
+            $course = $c;
+            list($course['teacher'], $course['subject'], $course['student'], $course['cType']) = $this->getNameInfo($c['teacher'], $c['subject'], $c['student'], $c['cType']);
+            $courseList[] = $course;
+        }
+
+        //add courseInfos
+        $params['lessons'] = config('language.study.lesson');
+        foreach ($courseInfos as $c) {
+            if(array_key_exists($c['t_index'], $params['table'])) {
+                $params['table'][$c['t_index']]['total']  += 1;
+            } else {
+                $date = date('Y-m-d', strtotime($c['openTime']));
+                $params['table'][$c['t_index']]['total'] = 1;
+                $params['table'][$c['t_index']]['date'] = $date;
+            }
+            $openTime = date('H:s', strtotime($c['openTime']));
+            $endTime = date('H:s', strtotime($c['endTime']));
+            $params['table'][$c['t_index']]['info'][] = [
+                'course' => "{$c['teacher']} | {$c['subject']} | {$c['student']} | $openTime ~ $endTime",
+            ];
+        }
+        foreach ($params['table'] as $k => $v) {
+            $params['table'][$k]['info'] = json_encode($v['info']);
+        }
+        return view('course.timetable', $params);
+    }
+
+    public function getStuGroup(Request $request) {
+        $params = [];
+        $cId = $request->input('cId');
+        $this->initStuGroupOptions($request, $params, $cId);
+        $res = $params['vueOptions']['stuGroup']['options'];
+        return json_encode($res);
     }
 
     protected function getWeekStartEnd($time = null) {
@@ -190,163 +268,12 @@ class CourseController extends Controller
         return [$weekStart, $weekEnd];
     }
 
-    protected function filterAvailableCourses($courses) {
-        foreach ($courses as $index => $course) {
-            if ($course['status'] != 1 || empty($course['periodLeft'])) {
-                unset($courses[$index]); continue;
-            }
-            foreach (['subjectInfo', 'teacherInfo', 'studentInfo'] as $key) {
-                if (empty($course[$key]['status']) || $course[$key]['status'] != 1) {
-                    unset($courses[$index]); break;
-                }
-            }
+    protected function reduceCoursePeriod($sIdStr, $cType, $period) {
+        $params = ['cType' => $cType, 'period' => $period];
+        $sIds = explode('_', $sIdStr);
+        foreach ($sIds as $sid) {
+            $res = $this->studentService->updateStudentCourses($sid, $params);
         }
-        return $courses;
-    }
-
-    public function timetable(Request $request) {
-        $params = [];
-        $this->initVueOptions($request, $params);
-        $this->initStudentOptions($request, $params);
-        $this->initTeacherOptions($request, $params);
-
-        $teacher = $request->input("teacher", $params['vueOptions']['teacher']['selected']);
-        $student = $request->input("student", $params['vueOptions']['student']['selected']);
-
-        list($weekStart, $weekEnd) = $this->getWeekStartEnd($request->input('openTime'));
-        $query = [
-            'start' => ['>=', $weekStart],
-            'end' => ['<=', $weekEnd.' 23:59:59'],
-            'status' => ['in', [2]], // confirmed
-        ];
-        if(!empty($teacher)) {
-            $query['teacher'] = $teacher;
-        }
-        if(!empty($student)) {
-            $query['student'] = $student;
-        }
-        $table = $this->timetableService->getInfoByQuery($query)->toArray();
-        $query = [
-            'start' => ['>=', $weekStart],
-            'end' => ['<=', $weekEnd.' 23:59:59'],
-            'status' => ['in', [1]], // active
-        ];
-        if(!empty($teacher)) {
-            $query['teacher'] = $teacher;
-        }
-        if(!empty($student)) {
-            $query['student'] = $student;
-        }
-        $table = array_merge($this->timetableService->getInfoByQuery($query)->toArray(), $table);
-
-        // courses
-        $courses = $this->courseService->getInfoByQuery([]);
-        $coursesAvailable = $this->filterAvailableCourses($courses);
-        $params['courses'] = $coursesAvailable;
-        foreach ($table as &$t) {
-            if (!empty($courses[$t['course']])) {
-                $t['courseInfo'] = $courses[$t['course']];
-            }
-        }
-        $params['table'] = $table;
-        // others
-        $params['subjects'] = $this->getSubjects();
-        $params['teachers'] = $this->getTeachers();
-        $params['students'] = $this->getStudents();
-        $params['time'] = $weekStart.'  --  '.$weekEnd;
-        $params['weekStart'] = $weekStart;
-        $params['weekEnd'] = $weekEnd;
-        $params['lessons'] = config('language.study.lesson', []);
-        $params['admin'] = (\Entrust::hasRole(['admin']) || \Entrust::hasRole('teacher')) ? 'admin' : '';
-        return view('course.timetable', $params);
-    }
-
-    public function saveTimetableData(Request $request) {
-        $id = $request->input('id');
-        $index = $request->input('index');
-        $courseId = $request->input('courseId');
-        $weekStart = $request->input('weekStart');
-        $weekEnd = $request->input('weekEnd');
-
-        $msg = [ 'errorCode' => 1, 'errorMsg' => '操作失败！' ];
-
-        // get existing table
-        if (!empty($id)) {
-            $table = $this->timetableService->getInfoById($id);
-            // error
-            if (empty($table)) {
-                $msg['errorMsg'] = '没有找到该排课';
-                return json_encode($msg);
-            }
-            // get course info
-            $courseId = $table['course'];
-        }
-
-        // get course
-        if (!empty($courseId)) {
-            $course = $this->courseService->getInfoById($courseId);
-        }
-        // error
-        if (empty($course)) {
-            $msg['errorMsg'] = '没有找到该课程';
-            return json_encode($msg);
-        }
-
-        $table = $this->timetableService->getInfoByQuery([
-            'course' => $course['id'],
-            'start' => ['>=', $weekStart],
-            'end' => ['<=', $weekEnd.' 23:59:59'],
-            'index' => $index,
-        ]);
-
-        if (!empty($table) && count($table) > 0) {
-            $msg['errorMsg'] = '该课程已添加，不需要重复添加';
-            return json_encode($msg);
-        }
-
-        // add base
-        $data = [
-            'course' => $course['id'],
-            'subject' => $course['subject'],
-            'teacher' => $course['teacher'],
-            'student' => $course['student'],
-            'index' => $index,
-        ];
-        // add time
-        $lesson = substr($index, 0, 1);
-        $weekDay = substr($index, 1, 1);
-        $lessonTime = config("language.study.lesson.$lesson");
-        $start = $lessonTime['start'];
-        $end = $lessonTime['end'];
-        //list($weekStart, $weekEnd) = $this->getWeekStartEnd();
-        $date = date('Y-m-d', strtotime("$weekEnd -".(7-$weekDay).' days'));
-        $data['start'] = $date.' '.$start;
-        $data['end'] = $date.' '.$end;
-        // create or update
-        if(empty($id)) {
-            $res = $this->timetableService->createOne($data);
-        }else {
-            $res = $this->timetableService->updateOne($id, $data);
-        }
-
-        // response
-        if ($res) {
-            $msg['errorCode'] = 0;
-            $msg['errorMsg'] = '操作成功';
-            $msg['data'] = ['id' => $res];
-        }
-        return json_encode($msg);
-    }
-
-    public function deleteTimetableData(Request $request) {
-        $id = $request->input('id');
-
-        $res = $this->timetableService->deleteOne($id);
-
-        $msg = [ 'errorCode' => 1, 'errorMsg' => '操作失败！' ];
-        if ($res) {
-            $msg = [ 'errorCode' => 0, 'errorMsg' => '操作成功' ];
-        }
-        return json_encode($msg);
+        return $res;
     }
 }

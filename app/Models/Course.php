@@ -6,6 +6,6 @@ use Illuminate\Database\Eloquent\Model;
 class Course extends Model {
     protected $connected = 'jr_cms';
     protected $table = 'courses';
-    protected $fillable = ['subject', 'student', 'teacher', 'period', 'status'];
+    protected $fillable = ['subject', 'student', 'teacher', 'period', 'cType', 'stuGroup', 'openTime', 'endTime', 'status', 't_index'];//add
     public $timestamps = false;
 }

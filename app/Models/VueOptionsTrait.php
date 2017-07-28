@@ -13,6 +13,7 @@ trait VueOptionsTrait {
         $this->initSex($request, $params);
         $this->initGrade($request, $params);
         $this->initTime($request, $params);
+        $this->initType($request, $params);
     }
 
     protected function initSex($request, &$params) {
@@ -34,6 +35,22 @@ trait VueOptionsTrait {
     protected function initTime($request, &$params) {
         $params['vueOptions']['openTime']['selected'] = $request->input('openTime', '');
         $params['vueOptions']['endTime']['selected'] = $request->input('endTime', '');
+    }
+
+    protected function initType($request, &$params) {
+        $params['vueOptions']['type']['selected'] = $request->input('type', '');
+        $params['vueOptions']['type']['options']  = [];
+        foreach(config('language.type', []) as $k => $v){
+            $params['vueOptions']['type']['options'][] = ['value' => $k, 'text' => $v];
+        }
+    }
+
+    public function initCStatus($request, &$params) {
+        $params['vueOptions']['status']['selected'] = $request->input('status', '');
+        $params['vueOptions']['status']['options']  = [];
+        foreach(config('language.status', []) as $k => $v){
+            $params['vueOptions']['status']['options'][] = ['value' => $k, 'text' => $v];
+        }
     }
 
     // get all: status = null
@@ -86,5 +103,67 @@ trait VueOptionsTrait {
                 $params['vueOptions']['student']['options'][] = ['value' => $v->id, 'text' => $v->name];
             }
         }
+    }
+
+    public function initCourseType($request, &$params) {
+        $params['vueOptions']['cType']['selected'] = $request->input('cType', '');
+        $params['vueOptions']['cType']['options']  = [];
+        foreach(config('language.cType', []) as $k => $v){
+            $params['vueOptions']['cType']['options'][] = ['value' => $k, 'text' => $v];
+        }
+    }
+
+    public function initStuGroupOptions($request, &$params, $teacher = []) {
+        $params['vueOptions']['stuGroup']['selected'] = $request->input('cType', '');
+        $params['vueOptions']['stuGroup']['options']  = [];
+        $groupService = new GroupService();
+        $subjectService = new SubjectService();
+        $studentService = new StudentService();
+
+        if(!empty($teacher)) {
+            $groupList = $groupService->getListByTId($teacher);
+        } else {
+            $groupList = $groupService->getInfo();
+        }
+
+        foreach($groupList as $group){
+            $subject = $subjectService->getNameById($group['subject']);
+            $studentList = explode(',', $group['student']);
+            $stuNames = [];
+            foreach ($studentList as $s) {
+                $stuName = $studentService->getNameById($s);
+                $stuNames[] = $stuName;
+            }
+            $student = join(',', $stuNames);
+            $cType = config("language.cType.{$group['cType']}");
+            $text = $cType . "($student | $subject)";
+            $params['vueOptions']['stuGroup']['options'][] = ['value' => $group['id'], 'text' => $text];
+        }
+    }
+
+    public function getNameInfo($teacher = '', $subject = '', $stuStr = '', $cType = '') {
+        $rea = $sub = $stu = $ct = '';
+        if(!empty($teacher)) {
+            $teacherService = new TeacherService();
+            $rea = $teacherService->getNameById($teacher);
+        }
+        if(!empty($subject)) {
+            $subjectService = new SubjectService();
+            $sub = $subjectService->getNameById($subject);
+        }
+        if(!empty($stuStr)) {
+            $studentService = new StudentService();
+            $studentList = explode(',', $stuStr);
+            $stuNames = [];
+            foreach ($studentList as $student) {
+                $stuName = $studentService->getNameById($student);
+                $stuNames[] = $stuName;
+            }
+            $stu = join(',', $stuNames);
+        }
+        if(!empty($cType)) {
+            $ct = config("language.cType.{$cType}");
+        }
+        return [$rea, $sub, $stu, $ct];
     }
 }

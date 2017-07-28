@@ -1,6 +1,8 @@
 <?php
 namespace App\Models\Service;
 
+use App\Models\Course;
+
 class BaseService {
     protected $model;
 
@@ -63,5 +65,10 @@ class BaseService {
 
     public function disableOne($id){
         return $this->model->where('id', $id)->update(['status' => 0]);
+    }
+
+    public function getNameById($id){
+        $res = $this->model->select('name')->where('id', $id)->first();
+        return $res->name;
     }
 }

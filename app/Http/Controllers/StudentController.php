@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\CourseService;
+use App\Models\GroupService;
 use App\Models\StudentService;
 use App\Models\SubjectService;
 use App\Models\Auth\RoleService;
 use App\Models\Auth\StaffService;
+use App\Models\TeacherService;
 use Illuminate\Http\Request;
 
 use Auth;
@@ -21,6 +23,8 @@ class StudentController extends Controller
         $this->subjectService = new SubjectService();
         $this->roleService = new RoleService();
         $this->staffService = new StaffService();
+        $this->groupService = new GroupService();
+        $this->teacherService = new TeacherService();
     }
 
     public function index(Request $request) {
@@ -49,27 +53,26 @@ class StudentController extends Controller
         $params['student'] = [];
         $params['student']['courses'] = [];
         $this->initVueOptions($request, $params);
-        $this->initSubjectOptions($request, $params);
-        $this->initTeacherOptions($request, $params, 1, true);
+        $this->initCourseType($request, $params);
+//        $this->initTeacherOptions($request, $params, 1, true);
 
         if($id = $request->input('id')){
             $student = $this->studentService->getInfoById($id)->toArray();
             $student['staff'] = $this->staffService->getInfoById($student['userId']);
             $params['student'] = $student;
             $params['student']['courses'] = [];
-            if (!empty($student['id'])) {
-                $allCourseInfo = $this->courseService->getInfoByQuery(['student' => $student['id']]);
-                if($allCourseInfo) {
-                    $keys = ['id', 'teacher', 'subject', 'period', 'periodLeft'];
-                    foreach ($allCourseInfo as $course) {
-                        foreach ($keys as $key) {
-                            $courseInfo[$key] = $course[$key];
-                        }
-                        $params['student']['courses'][] = $courseInfo;
+            if (!empty($student['courses'])) {
+                $keys = ['id', 'cType', 'period', 'passPeriod'];
+                foreach ($student['courses'] as $course) {
+                    foreach ($keys as $key) {
+                        $courseInfo[$key] = $course[$key];
                     }
+                    $courseInfo['restPeriod'] = $courseInfo['period'] - $courseInfo['passPeriod'];
+                    $params['student']['courses'][] = $courseInfo;
                 }
             }
         }
+
         return view('student.edit', $params);
     }
 
@@ -111,9 +114,10 @@ class StudentController extends Controller
         foreach ($request->input('cIds', []) as $i => $cId) {
             $data['courses'][] = [
                 'id' => $cId,
-                'subject' => $request->input("subjects.$i", ''),
-                'teacher' => $request->input("teachers.$i", ''),
+                'cType' => $request->input("cType.$i", ''),
+//                'teacher' => $request->input("teachers.$i", ''),
                 'period' => $request->input("periods.$i", ''),
+                'passPeriod' => $request->input("passPeriod.$i", 0),
             ];
         }
         // create or update student
@@ -194,5 +198,61 @@ class StudentController extends Controller
         }
 
         return view('student.query', $params);
+    }
+
+    public function group(Request $request) {
+        $params = [];
+        $params['controlUrl'] = '/student/group';
+        $groupList = $this->groupService->getInfo();
+        foreach ($groupList as $group) {
+            list($g['teacher'], $g['subject'], $g['student'], $g['cType']) = $this->getNameInfo($group['teacher'], $group['subject'], $group['student'], $group['cType']);
+            $g['id'] = $group['id'];
+            $params['group'][] = $g;
+        }
+
+        return view('student.group', $params);
+    }
+
+    public function groupEdit(Request $request) {
+        $params = [];
+        $params['controlUrl'] = '/student/group';
+        $this->initSubjectOptions($request, $params);
+        $this->initTeacherOptions($request, $params, 1, true);
+        $this->initStudentOptions($request, $params, 1, true);
+        $this->initCourseType($request, $params);
+
+        if($id = $request->input('id')) {
+            $params['group'] = $this->groupService->getInfoById($id);
+            $params['group']['student'] = explode(',', $params['group']['student']);
+        }
+
+        return view('student.groupEdit', $params);
+    }
+
+    public function groupUpdate(Request $request) {
+        $params = [];
+        $params['controlUrl'] = '/student/group';
+
+        $keys = ['teacher', 'subject', 'cType'];
+        foreach ($keys as $key) {
+            $data[$key] = intval($request->input($key));
+        }
+        $data['student'] = join(',', $request->input('student'));
+        $data['status'] = 1;
+
+        if($id = $request->input('id')) {
+            $res = $this->groupService->updateOne($id, $data);
+        } else {
+            $res = $this->groupService->createOne($data);
+
+        }
+        return redirect("/student/group");
+    }
+
+    public function groupDelete(Request $request) {
+        if ($id = $request->input('id', '')) {
+            $this->groupService->deleteOne($id);
+        }
+        return redirect("/student/group");
     }
 }

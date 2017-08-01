@@ -18,10 +18,10 @@
                             <label for="name">名称</label>
                             <input id="name" name="name" type="text" class="form-control" placeholder="名称" value="{{!empty($subject['name']) ? $subject['name'] : ''}}">
                         </div>
-                        <div class="col-xs-12 col-md-6 col-lg-4">
-                            <label for="color">课程表标签颜色</label>
-                            <input id="color" name="color" class="jscolor form-control" value="{{!empty($subject['color']) ? $subject['color'] : '00c0ef'}}">
-                        </div>
+                        {{--<div class="col-xs-12 col-md-6 col-lg-4">--}}
+                            {{--<label for="color">课程表标签颜色</label>--}}
+                            {{--<input id="color" name="color" class="jscolor form-control" value="{{!empty($subject['color']) ? $subject['color'] : '00c0ef'}}">--}}
+                        {{--</div>--}}
                     </div>
                 </div>
                 <div class="input-group" style="width:100%; margin-bottom:20px;">

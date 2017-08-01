@@ -41,7 +41,7 @@ class CourseController extends Controller
     public function subjectUpdate(Request $request) {
         $data = [
             'name'  => $request->input('name', ''),
-            'color' => $request->input('color', ''),
+//            'color' => $request->input('color', ''),
         ];
         if($id = $request->input('id')){
             $res = $this->subjectService->updateOne($id, $data);

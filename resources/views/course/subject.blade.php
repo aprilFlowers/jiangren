@@ -32,7 +32,7 @@
           <tr>
             <th>ID</th>
             <th>名称</th>
-            <th>标签颜色</th>
+            {{--<th>标签颜色</th>--}}
             <th>操作</th>
           </tr>
         </thead>
@@ -42,7 +42,7 @@
               <tr>
                 <td><a href="/course/subject/edit?id={{$subject['id']}}">{{$subject['id']}}</a></td>
                 <td>{{$subject['name']}}</td>
-                <td><input disabled style="background: #{{$subject['color']}}"></input></td>
+                {{--<td><input disabled style="background: #{{$subject['color']}}"></input></td>--}}
                 <td>
                   @if ($subject['status'] == 1)
                   <a class="btn btn-info" href="/course/subject/edit?id={{$subject['id']}}">修改</a>

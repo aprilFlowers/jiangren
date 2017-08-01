@@ -2,17 +2,26 @@
 
 @section('css')
     <style type="text/css">
-        .showBox {
+        .showBoxBg {
             width: 100%;
             height: 100%;
-            background-color: #777;
-            opacity: 0.7;
-            filter: alpha(opacity=70);
+            background: rgba(0,0,0,.6);
             position: absolute;
             top: 0;
             left: 0;
             z-index: 10;
             display: none;
+        }
+        .showBox {
+            width: 50%;
+            height: 50%;
+            background-color: #ffffff;
+            position: absolute;
+            top: 20%;
+            left: 20%;
+            z-index: 2000;
+            display: none;
+            border-radius: 25px;
         }
     </style>
 @endsection
@@ -52,10 +61,9 @@
     <div class="box">
       <div class="box-body" style="min-height: 700px">
         <div class="row">
-            <!-- right timetable -->
-            <div class="col-md-9">
-                <div class="right box box-solid">
-                <div class="box-body no-padding" id="sortable">
+            <!--  timetable -->
+            <div class="col-md-12">
+                <div class="box-body no-padding" id="sortable" style="text-align: center;">
                         <h2 style="text-align: center;">{{$time}}</h2>
                         <table class="timetable" cellspacing="0" width="100%" style="text-align:center; word-break:break-all; word-wrap:break-word;">
                             <thead>
@@ -87,14 +95,15 @@
                             @endforeach
                         </table>
                 </div>
-                </div>
                 <!-- /.box-body -->
             </div>
             <!-- end timetable -->
         </div>
       </div>
         <!-- /.box-body -->
-      <div class="showBox"></div>
+      <div class="showBoxBg">
+        <div class="showBox"></div>
+      </div>
         <!-- /.showbox -->
     </div>
 @endsection
@@ -138,15 +147,17 @@
         });
 
         function showCourseInfos (courseInfos, date) {
+            $('.showBoxBg').show();
             $('.showBox').show();
-            $('.showBox').append("<div id='courseInfo' style='color:white;text-align: center'> <h2>"+date+" </h2> </div>");
-            console.log(courseInfos);
+            $('.showBox').append("<div id='courseInfo' style='color:black;text-align: center;height: 100%;'> <h2 style='margin-top:5%'>"+date+" </h2> </div>");
+            $('#courseInfo').append("<div id='courseContent' style='color:black;text-align: center;height=50%;margin-top: 10%;'></div>");
             $.each($.parseJSON(courseInfos), function(index, content) {
-                $('#courseInfo').append("<div style='color:white;align-content: center'>" + content.course + "</div>");
+                $('#courseContent').append("<div style='color:black;align-content: center;'> <b>" + content.course + "</b></div>");
             });
         }
-        $('.showBox').on('click', function () {
+        $('.showBoxBg').on('click', function () {
             $(this).hide();
+            $('.showBoxBg').hide();
             $('#courseInfo').remove();
         });
     </script>

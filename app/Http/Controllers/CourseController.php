@@ -115,6 +115,7 @@ class CourseController extends Controller
         $this->initVueOptions($request, $params);
         $this->initTeacherOptions($request, $params, null);
         $this->initStuGroupOptions($request, $params);
+        $this->initCourseTime($request, $params);
 
         if($id){
             $courseInfos = $this->courseService->getInfoById($id);
@@ -126,34 +127,44 @@ class CourseController extends Controller
             foreach ($_keys as $_key){
                 $params['course'][$_key] = $courseInfos[$_key];
             }
-            $params['openTime'] = $courseInfos['openTime'];
-            $params['endTime'] = $courseInfos['endTime'];
+            $params['course']['date'] = date('Y-m-d', strtotime($courseInfos['openTime']));
+            $params['openTime']['selected'] = $courseInfos['oSel'];
+            $params['endTime']['selected'] = $courseInfos['eSel'];
         }
         return view('course.edit', $params);
     }
 
     public function update(Request $request) {
         $stuGroup = $request->input('stuGroup', '');
-        $openTime = $request->input('openTime', '');
-        $endTime = $request->input('endTime', '');
-        $period = floor((strtotime($endTime)-strtotime($openTime)) / 3600);
+        $date = $request->input('date', '');
+        $oSel = $request->input('openTime', '');
+        $eSel = $request->input('endTime', '');
+        $openTime = config("language.time.$oSel");
+        $period = number_format(($eSel - $oSel) / 2, 1);
 
         $stuGroupInfo = $this->groupService->getInfoById($stuGroup);
-        $week = date('w', strtotime($openTime));
+        $week = date('w', strtotime($date));
+        $time = '';
         foreach (config('language.study.lesson') as $k => $lesson) {
-            if(strtotime($lesson['start']) < strtotime(date('H:i', strtotime($openTime))) && strtotime($lesson['end']) > strtotime(date('H:i', strtotime($endTime)))) {
-                $time = $k;
+            $t = 0;
+            if(strtotime($lesson['start']) <= strtotime($openTime)) {
+                $t = $k + 1;
+                $next = config("language.study.lesson.$t");
+                if(strtotime($openTime) < strtotime($next['start'])) {
+                    $time = $k;
+                }
             }
         }
-
         $index = $time . ($week + 1);
         $params = [
             'teacher' => $request->input('teacher', ''),
             'subject' => $stuGroupInfo['subject'],
             'student' => $stuGroupInfo['student'],
             'cType' => $stuGroupInfo['cType'],
-            'openTime' => $openTime,
-            'endTime' => $endTime,
+            'oSel' => $oSel,
+            'eSel' => $eSel,
+            'openTime' => $date . ' ' . config("language.time.$oSel") . ':00',
+            'endTime' => $date . ' ' . config("language.time.$eSel") . ':00',
             'period' => $period,
             'stuGroup' => $stuGroup,
             't_index' => $index,
@@ -240,8 +251,8 @@ class CourseController extends Controller
                 $params['table'][$c['t_index']]['total'] = 1;
                 $params['table'][$c['t_index']]['date'] = $date;
             }
-            $openTime = date('H:s', strtotime($c['openTime']));
-            $endTime = date('H:s', strtotime($c['endTime']));
+            $openTime = config("language.time.{$c['oSel']}");
+            $endTime = config("language.time.{$c['eSel']}");
             $params['table'][$c['t_index']]['info'][] = [
                 'course' => "{$c['teacher']} | {$c['subject']} | {$c['student']} | $openTime ~ $endTime",
             ];

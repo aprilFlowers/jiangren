@@ -114,7 +114,7 @@ trait VueOptionsTrait {
     }
 
     public function initStuGroupOptions($request, &$params, $teacher = []) {
-        $params['vueOptions']['stuGroup']['selected'] = $request->input('cType', '');
+        $params['vueOptions']['stuGroup']['selected'] = $request->input('stuGroup', '');
         $params['vueOptions']['stuGroup']['options']  = [];
         $groupService = new GroupService();
         $subjectService = new SubjectService();
@@ -165,5 +165,14 @@ trait VueOptionsTrait {
             $ct = config("language.cType.{$cType}");
         }
         return [$rea, $sub, $stu, $ct];
+    }
+
+    public function initCourseTime($request, &$params) {
+        $params['vueOptions']['openTime']['options']  = [];
+        $params['vueOptions']['endTime']['options']  = [];
+        foreach(config('language.time', []) as $k => $v){
+            $params['vueOptions']['openTime']['options'][] = ['value' => $k, 'text' => $v];
+            $params['vueOptions']['endTime']['options'][] = ['value' => $k, 'text' => $v];
+        }
     }
 }

@@ -155,7 +155,7 @@ class CourseController extends Controller
                 }
             }
         }
-        $index = $time . ($week + 1);
+        $index = $time . (($week + 6) % 7 + 1);
         $params = [
             'teacher' => $request->input('teacher', ''),
             'subject' => $stuGroupInfo['subject'],
@@ -219,7 +219,7 @@ class CourseController extends Controller
         $query = [
             'openTime' => ['>=', $weekStart],
             'endTime' => ['<=', $weekEnd.' 23:59:59'],
-            'status' => ['in', [1]],
+            //'status' => ['in', [1]],
         ];
         if(!empty($teacher)) {
             $query['teacher'] = $teacher;

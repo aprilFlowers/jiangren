@@ -68,14 +68,24 @@
                         <table class="timetable" cellspacing="0" width="100%" style="text-align:center; word-break:break-all; word-wrap:break-word;">
                             <thead>
                             <tr>
-                                <td class="blank" width="12.5%">时间\星期</td>
-                                <td class="title" width="12.5%">星期日</td>
+                                <td class="blank" width="12.5%">日期</td>
+                                <td class="title" width="12.5%">{{$weekStart}}</td>
+                                <td class="title" width="12.5%">{{date('Y-m-d', strtotime($weekStart.'+1 day'))}}</td>
+                                <td class="title" width="12.5%">{{date('Y-m-d', strtotime($weekStart.'+2 day'))}}</td>
+                                <td class="title" width="12.5%">{{date('Y-m-d', strtotime($weekStart.'+3 day'))}}</td>
+                                <td class="title" width="12.5%">{{date('Y-m-d', strtotime($weekStart.'+4 day'))}}</td>
+                                <td class="title" width="12.5%">{{date('Y-m-d', strtotime($weekStart.'+5 day'))}}</td>
+                                <td class="title" width="12.5%">{{date('Y-m-d', strtotime($weekStart.'+6 day'))}}</td>
+                            </tr>
+                            <tr>
+                                <td class="blank" width="12.5%">星期</td>
                                 <td class="title" width="12.5%">星期一</td>
                                 <td class="title" width="12.5%">星期二</td>
                                 <td class="title" width="12.5%">星期三</td>
                                 <td class="title" width="12.5%">星期四</td>
                                 <td class="title" width="12.5%">星期五</td>
                                 <td class="title" width="12.5%">星期六</td>
+                                <td class="title" width="12.5%">星期日</td>
                             </tr>
                             </thead>
                             @foreach ($lessons as $lesson)
